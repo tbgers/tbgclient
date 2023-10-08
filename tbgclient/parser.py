@@ -11,6 +11,10 @@ parser_config = dict(
 )
 
 
+def parse_integer(text: str) -> int:
+    return int(re.sub(r"[^\d]", "", text))
+
+
 def parser(*args, **kwargs) -> BeautifulSoup:
     """Convenience function for ``BeautifulSoup(..., **parser_config)``."""
     return BeautifulSoup(*args, **parser_config, **kwargs)
@@ -19,20 +23,68 @@ def parser(*args, **kwargs) -> BeautifulSoup:
 def parse_message(msg: BeautifulSoup) -> MessageData:
     """Parse a message.
 
-    :param msg: The message element
+    :param msg: The message element.
     :type msg: BeautifulSoup
     :return: The parsed message.
     :rtype: MessageData
     """
     mid = int(msg.attrs["id"][3:])
     wrapper = msg.find("div", {"class": "post_wrapper"})
+
     poster = wrapper.find("div", {"class": "poster"})
-    # TODO: parse poster
+
+    user: UserData = {}
+    poster_title = poster.find("h4").find("a")
+    user["name"] = poster_title.text
+    # commence user_info...
+    user_info = poster.find("ul", {"class": "user_info"})
+    # avatar
+    poster_avatar = user_info.find("li", {"class": "avatar"})
+    if poster_avatar is not None:
+        user["avatar"] = poster_avatar.find("img").get("src")
+    # user group
+    poster_group = user_info.find("li", {"class": "postgroup"})
+    if poster_group is not None:
+        user["group"] = poster_group.text
+    # post count
+    poster_activity = user_info.find("li", {"class": "postcount"})
+    if poster_activity is not None:
+        user["posts"] = parse_integer(poster_activity.text[7:])
+    # blurb
+    poster_blurb = user_info.find("li", {"class": "blurb"})
+    if poster_blurb is not None:
+        user["blurb"] = poster_blurb.text
+    # gender
+    poster_gender = user_info \
+                        .find("li", {"class": "im_icons"}) 
+    if poster_gender is not None:
+        user["gender"] = poster_gender \
+                            .find("li", {"class": re.compile(r"cust_gender")}) \
+                            .find("span") \
+                            .get("title")
+    # website
+    poster_website = user_info.find("li", {"class": "profile"})
+    if poster_website is not None:
+        user["website"] = poster_website \
+                            .find("li") \
+                            .find("a") \
+                            .get("href")
+    # location
+    poster_location = user_info.find("li", {"class": re.compile(r"cust_loca")})
+    if poster_location is not None:
+        user["location"] = poster_location.text[6:]
+
     content = wrapper.find("div", {"class": "post"}).find("div")
+    signature = wrapper \
+                    .find("div", {"class": "moderatorbar"}) \
+                    .find("div", {"class": "signature"})
+    if signature is not None:
+        user["signature"] = "".join(map(str, signature.children)).strip()
 
     return {
         "mid": mid,
-        "content": str(content)
+        "content": "".join(map(str, content.children)).strip(),
+        "user": user
     }
 
 
@@ -55,7 +107,7 @@ def parse_page(doc: str, page_parser: Callable[[BeautifulSoup], list[dict]]) -> 
 
     :param doc: The document.
     :type doc: str
-    :return: The page
+    :return: The parsed page.
     :rtype: dict
     """
     elm = parser(doc)
@@ -80,5 +132,5 @@ def parse_page(doc: str, page_parser: Callable[[BeautifulSoup], list[dict]]) -> 
         "hierarchy": hierarchy,
         "current_page": current_page,
         "total_pages": total_pages,
-        "content": content
+        "contents": content
     }

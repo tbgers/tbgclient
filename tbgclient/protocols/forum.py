@@ -2,7 +2,8 @@
 Protocols that signifies parts of a forum.
 """
 
-from typing import Protocol, TypeVar, TypedDict, Generic
+from typing import Protocol, TypeVar, TypedDict
+from enum import Enum
 
 T = TypeVar('T')
 
@@ -66,15 +67,29 @@ class TopicData(ForumData, total=False):
     pages: int
 
 
+class UserGroup(Enum):
+    """An enum of user groups used in the TBGs."""
+    TBG = "TBGer"
+    TBG_TEAM = "TBG Team"
+    TBG_ADMIN = "TBG Administrator"
+    TBG_WIKI = "TBG Wiki Bureaucrats"
+    TBG_WIKI_ADMIN = "TBG Wiki Administrators"
+    TBG_MOD = "TBG Moderators"
+    RETIRED_TBG_MOD = "Retired TBG Moderators"
+
+
 class UserData(TypedDict, total=False):
     """A type that contains information about a user. 
 
     :ivar uid: The user ID.
     :ivar name: The user name.
+    :ivar avatar: The avatar/profile picture of the user.
+    :ivar group: The user group.
     :ivar posts: The total amount of posts this user has made.
+    :ivar signature: The signature of this user.
     :ivar email: The email address of this user.
     :ivar edited: The date when this message was last edited.
-    :ivar personal_text: The personal text of this user.
+    :ivar blurb: The personal text of this user.
     :ivar real_name: The real name of this user.
     :ivar location: The location of this user.
     :ivar social: The social names of this user.
@@ -83,9 +98,12 @@ class UserData(TypedDict, total=False):
     """
     uid: int
     name: str
+    avatar: str
+    group: str | UserGroup
     posts: int
+    signature: str
     email: str
-    personal_text: str
+    blurb: str
     location: str
     real_name: str
     social: dict[str, str]
@@ -104,7 +122,7 @@ class MessageData(TopicData, total=False):
     :ivar user: The poster of the message.
     """
     mid: int
-    title: str  # yes, this exists in SMF.
+    subject: str  # yes, this exists in SMF.
     date: str
     edited: str | None
     content: str
