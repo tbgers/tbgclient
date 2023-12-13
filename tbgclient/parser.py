@@ -20,6 +20,25 @@ def parser(*args, **kwargs) -> BeautifulSoup:
     return BeautifulSoup(*args, **parser_config, **kwargs)
 
 
+def get_hidden_inputs(document: str) -> dict[str, str]:
+    """Get hidden input values on a form.
+    Useful if you want to find nonce values."""
+    doc = parser(document)
+    form = doc.find_all("form")[1:]  # first one is always the search box
+    if len(form) != 1:
+        raise ValueError(
+            "FIXME: Found more than 1 form\n"
+            f"{[str(x) for x in form if x.clear() or True]}"
+        )
+    inputs = form[0].find_all("input", {"type": "hidden"})
+    # filter elements that is not hidden
+    nonce = {
+        tag.get("name"): tag.get("value")
+        for tag in inputs
+    }
+    return nonce
+
+
 def parse_message(msg: BeautifulSoup) -> MessageData:
     """Parse a message.
 
@@ -102,7 +121,7 @@ def parse_topic_content(content: BeautifulSoup) -> list[MessageData]:
     return [parse_message(msg) for msg in messages]
 
 
-def parse_page(doc: str, page_parser: Callable[[BeautifulSoup], list[dict]]) -> PageData:
+def parse_page(doc: str, page_parser: Callable[[BeautifulSoup], list[T]]) -> PageData[T]:
     """Parse a single page.
 
     :param doc: The document.
@@ -134,3 +153,4 @@ def parse_page(doc: str, page_parser: Callable[[BeautifulSoup], list[dict]]) -> 
         "total_pages": total_pages,
         "contents": content
     }
+

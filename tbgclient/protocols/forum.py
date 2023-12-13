@@ -2,15 +2,19 @@
 Protocols that signifies parts of a forum.
 """
 
-from typing import Protocol, TypeVar, TypedDict
+from typing import Protocol, TypeVar, TypedDict, Generic
 from enum import Enum
+from abc import ABC, abstractmethod
+from collections.abc import Sequence
 
 T = TypeVar('T')
 
 
-class Indexed(Protocol):
+class Indexed(ABC):
     """Protocol for anything that has an index (for example, messages)."""
 
+    # RFE: it would be nicer if we can just match function under a prefix
+    @abstractmethod
     def update(self, method: str) -> None:
         """Updates this object.
 
@@ -21,6 +25,7 @@ class Indexed(Protocol):
         """
         raise NotImplementedError
 
+    @abstractmethod
     def submit(self, method: str) -> None:
         """Submit this object.
         
@@ -29,6 +34,27 @@ class Indexed(Protocol):
         :param method: The method to use.
         :raise IncompleteError: Some necessary fields are not defined."""
         raise NotImplementedError
+
+
+class Paged(ABC, Sequence, Generic[T]):
+    @abstractmethod
+    def get_page(self, page=1) -> T:
+        """Get the specified page.
+        
+        Note that this function is 1-indexed; use `__getitem__` for a
+        0-indexed version of this function."""
+        raise NotImplementedError
+
+    @abstractmethod
+    def get_size(self) -> int:
+        """Returns the length of this object."""
+        raise NotImplementedError
+    
+    def __getitem__(self, x):
+        return self.get_page(x)
+    
+    def __len__(self):
+        return self.get_size()
     
 
 class PageData(TypedDict, total=False):
@@ -69,13 +95,32 @@ class TopicData(ForumData, total=False):
 
 class UserGroup(Enum):
     """An enum of user groups used in the TBGs."""
+    BANNED = "Banned"
     TBG = "TBGer"
     TBG_TEAM = "TBG Team"
-    TBG_ADMIN = "TBG Administrator"
+    # TBG_ADMIN = "TBG Administrator"  # this is not a thing anymore
     TBG_WIKI = "TBG Wiki Bureaucrats"
     TBG_WIKI_ADMIN = "TBG Wiki Administrators"
     TBG_MOD = "TBG Moderators"
     RETIRED_TBG_MOD = "Retired TBG Moderators"
+
+
+class PostIcons(Enum):
+    """An enum of the post icons used in the TBGs."""
+    # Yes, this is a thing now.
+    STANDARD = "xx"
+    THUMB_UP = "thumbup"
+    THUMB_DOWN = "thumbdown"
+    EXCLAMATION = "exclamation"
+    QUESTION = "question"
+    LAMP = "lamp"
+    SMILE = "smiley"
+    ANGRY = "angry"
+    CHEESY = "cheesy"
+    GRIN = "grin"
+    SAD = "sad"
+    WINK = "wink"
+    POLL = "poll"
 
 
 class UserData(TypedDict, total=False):
