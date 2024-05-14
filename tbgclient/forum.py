@@ -1,16 +1,18 @@
 """
 Classes that signifies parts of a forum.
 """
+from .session import Session, UsesSession
 from .protocols.forum import *
 from .exceptions import *
+from . import api
 from dataclasses import dataclass, InitVar
 from typing import TypeVar, Generic, Any
 
 T = TypeVar("T")
 
 
-class _IndexedAddons:
-    """Addons for classes inheriting Indexed."""
+class _Indexed(Indexed):
+    """An altered version of Indexed."""
 
     def update(self, method=str) -> None:
         """See :py:class:`Indexed`.
@@ -53,14 +55,17 @@ class Page(Generic[T]):
     total_pages: int
     contents: list[TypedDict]
     content_type: InitVar[T]
+    session: InitVar[Session]
 
-    def __post_init__(self, content_type: T):
+    def __post_init__(self, content_type: T, session: Session):
         # cast self.contents with content_type
-        self.contents = [content_type(**x) for x in self.contents]
+        self.contents = [
+            content_type(**x) for x in self.contents
+        ]
 
 
 @dataclass
-class User(Indexed, _IndexedAddons):
+class User(UsesSession, _Indexed):
     """Class that represents a user."""
     uid: int = None
     name: str = None
@@ -76,8 +81,8 @@ class User(Indexed, _IndexedAddons):
     website: str = None
     gender: str = None
 
-
-class Topic(Indexed, _IndexedAddons):
+@dataclass
+class Topic(Paged, UsesSession, _Indexed):
     """A type that contains information about a topic. 
 
     :ivar tid: The topic ID.
@@ -86,12 +91,13 @@ class Topic(Indexed, _IndexedAddons):
     """
     tid: int = None
     topic_name: str = None
-    pages: int = None
-
+    
+    def __post_init__(self):
+        self.pages = 0
 
 
 @dataclass
-class Message(Topic, _IndexedAddons):
+class Message(UsesSession, _Indexed):
     """Class that represents a message.
 
     A message (usually called a post) is the smallest unit of a forum. It carries
@@ -99,12 +105,14 @@ class Message(Topic, _IndexedAddons):
     links, etc. It also carries other metadata like date of post and the user that 
     posted this post.
     """
+    tid: int = None
     mid: int = None
     subject: str = None
     date: str = None
     edited: str | None = None
     content: str = None
     user: User | UserData = None
+    icon: str | PostIcons = None
 
     def __post_init__(self):
         if type(self.user) is dict:
@@ -114,5 +122,7 @@ class Message(Topic, _IndexedAddons):
         """POST this message on the specified :py:ivar:`tid`."""
         if self.tid is None:
             raise IncompleteError("tid not specified")
-        
+        api.post_message(
+            self.session, self.tid, self.content, self.subject, self.icon
+        )
 

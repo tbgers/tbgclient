@@ -33,8 +33,7 @@ def request(session: requests.Session, method: str, url: str,
 
 def do_action(session: requests.Session, action: str, method: str = "GET",  
               params: dict[str, str] = {}, queries: dict[str, str] = {}, 
-              **kwargs) \
-    -> requests.Response:
+              **kwargs) -> requests.Response:
     """Sends an action to the server.
 
     An action is a forum feature that is executed when the URL contains the 
@@ -66,8 +65,7 @@ def do_action(session: requests.Session, action: str, method: str = "GET",
 
 
 def get_topic_page(session: requests.Session, tid: int, mid: int | str = 0, 
-                   **kwargs) \
-    -> requests.Response:
+                   **kwargs) -> requests.Response:
     """GETs a page of a topic.
 
     :param session: The session used.
@@ -85,8 +83,7 @@ def get_topic_page(session: requests.Session, tid: int, mid: int | str = 0,
 def post_message(session: requests.Session, tid: int, message: str, 
                  subject: str = "Reply", 
                  icon: str | PostIcons = PostIcons.STANDARD,
-                 **kwargs)\
-    -> requests.Response:
+                 **kwargs) -> requests.Response:
     """Post a reply to the specified topic ID.
     
     :param session: The session used.

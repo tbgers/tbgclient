@@ -11,7 +11,7 @@ T = TypeVar('T')
 
 
 class Indexed(ABC):
-    """Protocol for anything that has an index (for example, messages)."""
+    """ABC for anything that has an index (for example, messages)."""
 
     # RFE: it would be nicer if we can just match function under a prefix
     @abstractmethod
@@ -51,7 +51,13 @@ class Paged(ABC, Sequence, Generic[T]):
         raise NotImplementedError
     
     def __getitem__(self, x):
-        return self.get_page(x)
+        x = round(x)
+        length = len(self)
+        if x < 0:  # negative indicies wraps around
+            x = length - x
+        if x < 0 or x >= length:
+            raise IndexError("list index out of range")
+        return self.get_page(x - 1)
     
     def __len__(self):
         return self.get_size()

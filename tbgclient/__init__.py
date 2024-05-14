@@ -6,3 +6,4 @@ from . import api
 from . import exceptions
 
 from .forum import *
+from .session import Session
