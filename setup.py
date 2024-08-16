@@ -14,5 +14,5 @@ setup(
     author='Gilbert189',
     author_email='gilbertdannellelo@gmail.com',
     packages=find_packages("tbgclient"),  # same as name
-    install_require=['beautifulsoup4'],
+    install_require=['requests', 'beautifulsoup4'],
 )

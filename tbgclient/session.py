@@ -1,32 +1,35 @@
 """
 A module that contains classes for sessions.
 """
-from requests.cookies import RequestsCookieJar
+from multiprocessing.process import BaseProcess
 import requests
+from requests.cookies import RequestsCookieJar
 from .forum import *
 from . import api
+from asyncio import current_task, Task
+from threading import current_thread, Thread
+from multiprocessing import current_process
+from typing import Optional, Union
 
 """
 Since allowing different tasks, threads, or process clobbering the same stack 
-would be disasterous, we distinguish them so that each of them have their own
+would be disastrous, we distinguish them so that each of them have their own
 session stack.
 """
 
 _sessions = {}
-default_session: "Session" = None
+default_session: Optional["Session"] = None
 
-def get_context():
+
+def get_context() -> tuple[Union[Task, "ellipsis", None], Thread, "BaseProcess"]:
     """Get the current context.
-    :rtype: (Task, Thread, Process)
+    :rtype: (Task | ... | None, Thread, Process)
     """
-    from asyncio import current_task
-    from threading import current_thread
-    from multiprocessing import current_process
-
+    task: Union[Task, "ellipsis", None]
     try:
         task = current_task()
-    except:
-        task = ...
+    except RuntimeError:
+        task = ...  # to distinguish it with None
     thread = current_thread()
     process = current_process()
     return task, thread, process
@@ -40,11 +43,12 @@ def push_session(session):
     _sessions[context].append(session)
 
 
-def pop_session():
+def pop_session() -> "Session":
+    """Pop a session from the current session stack."""
     context = get_context()
     popped = _sessions[context].pop()
     if _sessions[context] == []:
-        # if the stack is blank, we can assume this context is finished
+        # if the stack is blank, we can assume this context is finished,
         # and we can delete it to save memory
         del _sessions[context]
     return popped
@@ -56,29 +60,32 @@ class Session:
     session: requests.Session
     cookies: RequestsCookieJar
 
-    def __init__(self):
+    def __init__(self, get_sess_id=False):
         self.session = requests.Session()
         self.cookies = RequestsCookieJar()
+        if get_sess_id:
+            # Get the PHPSESSID token.
+            self.request("GET", api.FORUM_URL, allow_redirects=False)
         pass
 
     def login(self, username, password):
-        """Logs in the session.to a user.
+        """Logs in the session to a user.
         :param username: The username.
         :param password: The password.
         """
-        res = api.login(self.session, username, password, cookies=self.cookies)
+        res = api.login(self, username, password, cookies=self.cookies)
         self.cookies.update(res.cookies)
 
     def request(self, *args, **kwargs):
         """Do a request using this Session's cookie jar."""
         if "cookies" in kwargs:
-            kwargs["cookies"].update(self.cookies)
+            kwargs["cookies"] = {**kwargs["cookies"], **self.cookies}
         res = self.session.request(*args, **kwargs)
         self.cookies.update(res.cookies)
         return res
 
     def __enter__(self):
-        """Use this session for the fowithllowing context."""
+        """Use this session for the following context."""
         push_session(self)
         return self
 
@@ -86,7 +93,7 @@ class Session:
         # check if someone has tampered with the stack
         popped = pop_session()
         if popped is not self:
-            raise RuntimeError("Stack mismatch, something has been tampering it")
+            raise RuntimeError("Stack mismatch, did something tampered it?")
     
     def make_default(self):
         """Make this Session object the default for requests."""
@@ -97,7 +104,7 @@ class Session:
 class UsesSession:
     """A mixin for those that uses a session.
     
-    This provides the property ``session`` which is the session used in this
+    This provides the property :py:ivar:`session` which is the session used in this
     context."""
     @property
     def session(self):

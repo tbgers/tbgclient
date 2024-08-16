@@ -2,10 +2,11 @@
 Protocols that signifies parts of a forum.
 """
 
-from typing import Protocol, TypeVar, TypedDict, Generic
+from typing import TypeVar, TypedDict, Generic, Self
 from enum import Enum
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
+from datetime import datetime
 
 T = TypeVar('T')
 
@@ -15,22 +16,23 @@ class Indexed(ABC):
 
     # RFE: it would be nicer if we can just match function under a prefix
     @abstractmethod
-    def update(self, method: str) -> None:
+    def update(self, method: str) -> Self:
         """Updates this object.
 
-        This function is to modify objects that already exists on the TBG server.
-        
+        This function is to modify objects that already exists on the TBG
+        server.
+
         :param method: The method to use.
         :raise IncompleteError: Some necessary fields are not defined.
         """
         raise NotImplementedError
 
     @abstractmethod
-    def submit(self, method: str) -> None:
+    def submit(self, method: str) -> Self:
         """Submit this object.
-        
+
         This function is to create objects that don't exist on the TBG server.
-        
+
         :param method: The method to use.
         :raise IncompleteError: Some necessary fields are not defined."""
         raise NotImplementedError
@@ -38,9 +40,9 @@ class Indexed(ABC):
 
 class Paged(ABC, Sequence, Generic[T]):
     @abstractmethod
-    def get_page(self, page=1) -> T:
+    def get_page(self, page=1) -> list[T]:
         """Get the specified page.
-        
+
         Note that this function is 1-indexed; use `__getitem__` for a
         0-indexed version of this function."""
         raise NotImplementedError
@@ -49,7 +51,7 @@ class Paged(ABC, Sequence, Generic[T]):
     def get_size(self) -> int:
         """Returns the length of this object."""
         raise NotImplementedError
-    
+
     def __getitem__(self, x):
         x = round(x)
         length = len(self)
@@ -58,12 +60,12 @@ class Paged(ABC, Sequence, Generic[T]):
         if x < 0 or x >= length:
             raise IndexError("list index out of range")
         return self.get_page(x - 1)
-    
+
     def __len__(self):
         return self.get_size()
-    
 
-class PageData(TypedDict, total=False):
+
+class PageData(TypedDict, Generic[T], total=False):
     """A type that contains information about a page.
 
     :ivar hiearchy: The forum ID.
@@ -74,7 +76,7 @@ class PageData(TypedDict, total=False):
     hierarchy: list[tuple[str, str]]
     current_page: int
     total_pages: int
-    contents: list[dict]
+    contents: list[T]
 
 
 class ForumData(TypedDict, total=False):
@@ -88,7 +90,7 @@ class ForumData(TypedDict, total=False):
 
 
 class TopicData(ForumData, total=False):
-    """A type that contains information about a topic. 
+    """A type that contains information about a topic.
 
     :ivar tid: The topic ID.
     :ivar topic_name: The topic name.
@@ -129,22 +131,38 @@ class PostIcons(Enum):
     POLL = "poll"
 
 
-class UserData(TypedDict, total=False):
-    """A type that contains information about a user. 
+class Smilies(Enum):
+    """An enum of the smilies icons used in the TBGs."""
+    # Note: Uses file names for the member names.
+    SMILE = ":)"
+    NEUTRAL = ":|"
+    SAD = ":("
+    YIKES = ":o"
+    BIG_SMILE = ":D"
+    LOL = ":lol:"
+    HMM = ":/"
+    MAD = "D:<"
+    WINK = ";)"
+    TONGUE = ":P"
+    ROLL = ":roll:"
+    COOL = "B)"
 
-    :ivar uid: The user ID.
-    :ivar name: The user name.
+
+class UserData(TypedDict, total=False):
+    """A type that contains information about a user.
+
+    :ivar uid: The user's ID.
+    :ivar name: The user's name.
     :ivar avatar: The avatar/profile picture of the user.
-    :ivar group: The user group.
+    :ivar group: The user's group.
     :ivar posts: The total amount of posts this user has made.
     :ivar signature: The signature of this user.
     :ivar email: The email address of this user.
-    :ivar edited: The date when this message was last edited.
     :ivar blurb: The personal text of this user.
     :ivar real_name: The real name of this user.
     :ivar location: The location of this user.
     :ivar social: The social names of this user.
-    :ivar website: The website URL of this user. 
+    :ivar website: The website URL of this user.
     :ivar gender: The gender of this user.
     """
     uid: int
@@ -163,7 +181,7 @@ class UserData(TypedDict, total=False):
 
 
 class MessageData(TopicData, total=False):
-    """A type that contains information about a message. 
+    """A type that contains information about a message.
 
     :ivar mid: The message ID.
     :ivar title: The message title.
@@ -171,10 +189,12 @@ class MessageData(TopicData, total=False):
     :ivar edited: The date when this message was last edited.
     :ivar content: The message content.
     :ivar user: The poster of the message.
+    :ivar icon: The icon used in the message. Usually this is invisible.
     """
     mid: int
     subject: str  # yes, this exists in SMF.
-    date: str
+    date: str | datetime
     edited: str | None
     content: str
     user: UserData
+    icon: str | PostIcons

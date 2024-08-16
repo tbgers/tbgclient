@@ -18,4 +18,6 @@ class RequestError(Exception):
 class IncompleteError(Exception):
     """Called when an object cannot execute a function due to an undefined 
     instance variable."""
-    pass
+    def __init__(self, missing):
+        super().__init__(f"{', '.join(missing)} not specified")
+        self.missing = missing

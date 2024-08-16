@@ -7,11 +7,17 @@ from .exceptions import RequestError
 import urllib.parse
 from . import parser
 from .protocols.forum import PostIcons
+from typing import Any, Union, TYPE_CHECKING
+if TYPE_CHECKING:
+    from . import session
 
 FORUM_URL = "https://tbgforums.com/forums/index.php"
+TOPIC_PER_PAGE = 25  # Let's hope this constant is managed by admins only...
+raise_on_error_code = True
+Session = Union[requests.Session, "session.Session"]
 
 
-def request(session: requests.Session, method: str, url: str, 
+def request(session: Session, method: str, url: str,
             **kwargs) -> requests.Response:
     """Sends a request.
 
@@ -26,19 +32,19 @@ def request(session: requests.Session, method: str, url: str,
     :rtype: requests.Response
     """
     res = session.request(method, url, **kwargs)
-    if res.status_code > 400:
-        raise RequestError(f"{method} {url} returns {res.status_code}", response=res)
+    if res.status_code > 400 and raise_on_error_code:
+        raise RequestError(f"{method} {url} returns {res.status_code}",
+                           response=res)
     return res
 
 
-def do_action(session: requests.Session, action: str, method: str = "GET",  
-              params: dict[str, str] = {}, queries: dict[str, str] = {}, 
+def do_action(session: Session, action: str, method: str = "GET",
+              params: dict[str, str] = {}, queries: dict[str, Any] = {},
               **kwargs) -> requests.Response:
     """Sends an action to the server.
 
-    An action is a forum feature that is executed when the URL contains the 
-    query parameter ``action``. This parameter may contain other parameters
-    seperated by semicolons, with the action name written first.
+    An action is a forum feature that is executed when the URL contains the
+    query parameter ``action``.
 
     :param session: The session used.
     :type session: requests.Session
@@ -53,18 +59,18 @@ def do_action(session: requests.Session, action: str, method: str = "GET",
     :return: The response.
     :rtype: requests.Response
     """
+    def preprocess(x):
+        return urllib.parse.quote(x, safe='')
     params_string = "".join(
-        f";{preprocess(k)}={preprocess(v)}" 
+        f";{preprocess(k)}={preprocess(v)}"
         for k, v in params.items()
-        for preprocess in (lambda x: urllib.parse.quote(x, safe=''),)
-        # poorman's version of "where ... = ..."
     )
     return request(session, method, FORUM_URL,
-                   params = {**queries, "action": action + params_string},
+                   params={**queries, "action": action + params_string},
                    **kwargs)
 
 
-def get_topic_page(session: requests.Session, tid: int, mid: int | str = 0, 
+def get_topic_page(session: Session, tid: int, idx: int | str = 0,
                    **kwargs) -> requests.Response:
     """GETs a page of a topic.
 
@@ -72,26 +78,51 @@ def get_topic_page(session: requests.Session, tid: int, mid: int | str = 0,
     :type session: requests.Session
     :param tid: The topic ID.
     :type tid: int
-    :param mid: The message ID. This could also be ``"new"`` for the latest post.
-    :type mid: int | str
+    :param idx: The message number. This could also be ``"new"`` for the \
+        latest post.
+    :type idx: int | str
     :return: The response.
     :rtype: requests.Response
     """
-    return request(session, "GET", FORUM_URL + f"?topic={tid}.{mid}", **kwargs)
+    return request(session, "GET", FORUM_URL + f"?topic={tid}.{idx}", **kwargs)
 
 
-def post_message(session: requests.Session, tid: int, message: str, 
-                 subject: str = "Reply", 
+def get_message_page(session: Session, mid: int,
+                     **kwargs) -> requests.Response:
+    """GETs a page of a topic of the specified message ID.
+
+    :param session: The session used.
+    :type session: requests.Session
+    :param mid: The message ID.
+    :type mid: int
+    :return: The response.
+    :rtype: requests.Response
+    """
+    if "cookies" in kwargs and "PHPSESSID" not in kwargs["cookies"] \
+       or "PHPSESSID" not in session.cookies:
+        # Get the PHPSESSID token.
+        res = session.request("GET", FORUM_URL, allow_redirects=False)
+        kwargs["cookies"] = {
+            **(kwargs["cookies"] if "cookies" in kwargs else {}),
+            **res.cookies
+        }
+    return request(session, "GET", FORUM_URL + f"?msg={mid}", **kwargs)
+
+
+def post_message(session: Session, tid: int, message: str,
+                 subject: str = "Reply",
                  icon: str | PostIcons = PostIcons.STANDARD,
                  **kwargs) -> requests.Response:
     """Post a reply to the specified topic ID.
-    
+
     :param session: The session used.
     :type session: requests.Session
     :param tid: The topic ID.
     :type tid: int
     :param message: The message content.
     :type message: str
+    :param subject: The message subject.
+    :type subject: str
     :param icon: The message icon.
     :type icon: str | PostIcons
     :return: The response.
@@ -106,28 +137,81 @@ def post_message(session: requests.Session, tid: int, message: str,
     res = do_action(
         session,
         "post2",
-        method = "POST",
-        data = {
+        method="POST",
+        data={
             "message": message,
             "subject": subject,
-            "icon": icon.value if type(icon) is PostIcons else icon, 
+            "icon": icon.value if type(icon) is PostIcons else icon,
             "post": "Post",
             "goback": "0",
             **nonce,
         },
-        cookies = topic_res.cookies,
-        allow_redirects = False,  # the redirect doesn't set any cookie
+        cookies=topic_res.cookies,
+        allow_redirects=False,  # the redirect doesn't set any cookie
     )
     return res
 
 
-def login(session: requests.Session, username: str, password: str, 
+def edit_message(session: Session, mid: int, tid: int,
+                 message: str, subject: str = "Reply",
+                 icon: str | PostIcons = PostIcons.STANDARD,
+                 reason: str = "",
+                 **kwargs) -> requests.Response:
+    """Edits a reply to the specified message ID on a topic ID.
+    (Yes, the topic ID is required!)
+
+    :param session: The session used.
+    :type session: requests.Session
+    :param mid: The message ID.
+    :type mid: int
+    :param tid: The topic ID.
+    :type tid: int
+    :param message: The message content.
+    :type message: str
+    :param subject: The message subject.
+    :type subject: str
+    :param icon: The message icon.
+    :type icon: str | PostIcons
+    :param reason: The reason for the edit.
+    :type reason: str
+    :return: The response.
+    :rtype: requests.Response
+    """
+    # first we get the nonce values (and other hidden inputs I guess)
+    topic_res = do_action(session, "post", queries={"msg": mid, "topic": tid},
+                          **kwargs)
+    nonce = parser.get_hidden_inputs(topic_res.text)
+    # print(nonce)
+
+    # then we post the reply
+    res = do_action(
+        session,
+        "post",
+        method="POST",
+        data={
+            "message": message,
+            "subject": subject,
+            "icon": icon.value if type(icon) is PostIcons else icon,
+            "post": "Post",
+            "goback": "0",
+            "modify_reason": reason,
+            **nonce,
+        },
+        cookies=topic_res.cookies,
+        allow_redirects=False,  # the redirect doesn't set any cookie
+    )
+    return res
+
+
+def login(session: Session, username: str, password: str,
           **kwargs) -> requests.Response:
     """Logs in to the server.
-    
+
     When given the correct credentials, the returned request will carry
-    the session cookie for the user. Don't rely on ``session`` storing them
-    as cookies stored on ``request.Session`` are global."""
+    the session cookie for the user.
+
+    .. warning:: Don't rely on ``session`` storing them, as cookies stored
+    on ``requests.Session`` are global."""
 
     # get form first to get nonce
     form_res = do_action(session, "login")
@@ -138,16 +222,15 @@ def login(session: requests.Session, username: str, password: str,
     res = do_action(
         session,
         "login2",
-        method = "POST",
-        data = {
-            "user": username, 
+        method="POST",
+        data={
+            "user": username,
             "passwrd": password,
             "cookielength": "3153600",  # essentially forever
             **nonce
         },
-        cookies = form_res.cookies,
-        allow_redirects = False,  # the redirect doesn't set any cookie
+        cookies=form_res.cookies,
+        allow_redirects=False,  # the redirect doesn't set any cookie
         **kwargs
     )
     return res
-
