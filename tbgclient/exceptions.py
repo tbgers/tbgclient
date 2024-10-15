@@ -2,10 +2,10 @@ import requests
 
 
 class RequestError(Exception):
-    """An exception that is raised when an API call failed, either by a 
+    """An exception that is raised when an API call failed, either by a
     failure response code or if an API call cannot be processed further.
 
-    This exception provides the response causing the exception, accessable in 
+    This exception provides the response causing the exception, accessable in
     the attribute ``response``.
 
     :ivar response: The response that caused the exception.
@@ -16,7 +16,7 @@ class RequestError(Exception):
 
 
 class IncompleteError(Exception):
-    """Called when an object cannot execute a function due to an undefined 
+    """Called when an object cannot execute a function due to an undefined
     instance variable."""
     def __init__(self, missing):
         super().__init__(f"{', '.join(missing)} not specified")

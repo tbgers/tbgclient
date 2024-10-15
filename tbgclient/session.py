@@ -4,7 +4,6 @@ A module that contains classes for sessions.
 from multiprocessing.process import BaseProcess
 import requests
 from requests.cookies import RequestsCookieJar
-from .forum import *
 from . import api
 from asyncio import current_task, Task
 from threading import current_thread, Thread
@@ -12,7 +11,7 @@ from multiprocessing import current_process
 from typing import Optional, Union
 
 """
-Since allowing different tasks, threads, or process clobbering the same stack 
+Since allowing different tasks, threads, or process clobbering the same stack
 would be disastrous, we distinguish them so that each of them have their own
 session stack.
 """
@@ -21,11 +20,11 @@ _sessions = {}
 default_session: Optional["Session"] = None
 
 
-def get_context() -> tuple[Union[Task, "ellipsis", None], Thread, "BaseProcess"]:
+def get_context() -> tuple[Union[Task, ..., None], Thread, "BaseProcess"]:
     """Get the current context.
     :rtype: (Task | ... | None, Thread, Process)
     """
-    task: Union[Task, "ellipsis", None]
+    task: Union[Task, ..., None]
     try:
         task = current_task()
     except RuntimeError:
@@ -94,7 +93,7 @@ class Session:
         popped = pop_session()
         if popped is not self:
             raise RuntimeError("Stack mismatch, did something tampered it?")
-    
+
     def make_default(self):
         """Make this Session object the default for requests."""
         global default_session
@@ -103,9 +102,9 @@ class Session:
 
 class UsesSession:
     """A mixin for those that uses a session.
-    
-    This provides the property :py:ivar:`session` which is the session used in this
-    context."""
+
+    This provides the property :py:ivar:`session` which is the session used in
+    this context."""
     @property
     def session(self):
         context = get_context()
@@ -114,4 +113,3 @@ class UsesSession:
                 raise RuntimeError("No default session is defined")
             return default_session
         return _sessions[context][-1]
-
