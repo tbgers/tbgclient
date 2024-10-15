@@ -1,6 +1,6 @@
 from bs4 import BeautifulSoup
-from .protocols.forum import MessageData, PageData, UserData
-from .exceptions import RequestError
+from tbgclient.protocols.forum import MessageData, PageData, UserData
+from tbgclient.exceptions import RequestError
 import re
 from typing import TypeVar, Callable
 from requests import Response
@@ -36,13 +36,14 @@ def check_errors(document: str, response: Response) -> None:
     :raises RequestError: An error message is found.
     """
     elm = parser(document)
+
     fatal_error = elm.find("div", {"id": "fatal_error"})
     if fatal_error is not None:
-        message = fatal_error.contents[1] \
-                             .contents[0] \
-                             .text
+        message = fatal_error.contents[3] \
+                             .contents[1]
         raise RequestError(
-            f"An error has occurred: \n{message.text} ({message.get('id')})",
+            f"An error has occurred: \n{message.text.strip()}\n"
+            f"({message.get('id')})",
             response=response
         )
     errors = elm.find("div", {"id": "errors"})

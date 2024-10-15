@@ -5,7 +5,8 @@ from .session import Session, UsesSession
 from .protocols.forum import Indexed, UserGroup, Paged, PostIcons, UserData
 # from .protocols.forum import
 from .exceptions import RequestError, IncompleteError
-from . import api, parser
+from . import api
+from .parsers import forum as forum_parser
 from dataclasses import dataclass, InitVar
 from typing import TypeVar, Generic, TypedDict
 from warnings import warn
@@ -114,7 +115,10 @@ class Topic(Paged, UsesSession, _Indexed):
         """GET this topic on the specified :py:ivar:`tid`."""
         check_fields(self, "tid")
         res = api.get_topic_page(self.session, self.tid, 0)
-        parsed = parser.parse_page(res.text, parser.parse_topic_content)
+        parsed = forum_parser.parse_page(
+            res.text,
+            forum_parser.parse_topic_content
+        )
         last_item = parsed["hierarchy"][-1]
         last_name, _last_url = last_item
         self.topic_name = last_name
@@ -127,7 +131,10 @@ class Topic(Paged, UsesSession, _Indexed):
         res = api.get_topic_page(
             self.session, self.tid, (page - 1) * api.TOPIC_PER_PAGE
         )
-        parsed = parser.parse_page(res.text, parser.parse_topic_content)
+        parsed = forum_parser.parse_page(
+            res.text,
+            forum_parser.parse_topic_content
+        )
         if page != parsed["current_page"]:
             warn(f"Expected page {page}, got page {parsed["current_page"]}")
         # just in case update_get() hasn't been called
@@ -171,7 +178,7 @@ class Message(UsesSession, _Indexed):
         res = api.post_message(
             self.session, self.tid, self.content, self.subject, self.icon
         )
-        parser.check_errors(res.text, res)
+        forum_parser.check_errors(res.text, res)
         return self
 
     def update_get(self):
@@ -180,8 +187,11 @@ class Message(UsesSession, _Indexed):
         res = api.get_message_page(
             self.session, self.mid
         )
-        parser.check_errors(res.text, res)
-        parsed = parser.parse_page(res.text, parser.parse_topic_content)
+        forum_parser.check_errors(res.text, res)
+        parsed = forum_parser.parse_page(
+            res.text,
+            forum_parser.parse_topic_content
+        )
         post = filter(lambda x: x["mid"] == 739696, parsed["contents"])
         try:
             post = next(post)
@@ -189,4 +199,14 @@ class Message(UsesSession, _Indexed):
         except StopIteration:
             raise RequestError("Requested post doesn't exist in page",
                                request=res)
+        return self
+
+    def submit_edit(self, reason=""):
+        """POST an edit with a specified reason."""
+        check_fields(self, "mid", "tid")
+        res = api.edit_message(
+            self.session, self.mid, self.tid, self.content, self.subject,
+            self.icon, reason
+        )
+        forum_parser.check_errors(res.text, res)
         return self

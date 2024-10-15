@@ -5,7 +5,7 @@ Contains functions to communicate with the TBG server.
 import requests
 from .exceptions import RequestError
 import urllib.parse
-from . import parser
+from .parsers import forum as forum_parser
 from .protocols.forum import PostIcons
 from typing import Any, Union, TYPE_CHECKING
 if TYPE_CHECKING:
@@ -130,7 +130,7 @@ def post_message(session: Session, tid: int, message: str,
     """
     # first we get the nonce values (and other hidden inputs I guess)
     topic_res = do_action(session, "post2", queries={"topic": tid}, **kwargs)
-    nonce = parser.get_hidden_inputs(topic_res.text)
+    nonce = forum_parser.get_hidden_inputs(topic_res.text)
     # print(nonce)
 
     # then we post the reply
@@ -180,7 +180,7 @@ def edit_message(session: Session, mid: int, tid: int,
     # first we get the nonce values (and other hidden inputs I guess)
     topic_res = do_action(session, "post", queries={"msg": mid, "topic": tid},
                           **kwargs)
-    nonce = parser.get_hidden_inputs(topic_res.text)
+    nonce = forum_parser.get_hidden_inputs(topic_res.text)
     # print(nonce)
 
     # then we post the reply
@@ -188,11 +188,13 @@ def edit_message(session: Session, mid: int, tid: int,
         session,
         "post",
         method="POST",
+        queries={"msg": mid},
         data={
+            "topic": tid,
             "message": message,
             "subject": subject,
             "icon": icon.value if type(icon) is PostIcons else icon,
-            "post": "Post",
+            "post": "Save",
             "goback": "0",
             "modify_reason": reason,
             **nonce,
@@ -216,7 +218,7 @@ def login(session: Session, username: str, password: str,
     # get form first to get nonce
     form_res = do_action(session, "login")
     # print(form_res.cookies)
-    nonce = parser.get_hidden_inputs(form_res.text)
+    nonce = forum_parser.get_hidden_inputs(form_res.text)
 
     # then login
     res = do_action(
