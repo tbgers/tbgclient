@@ -210,3 +210,22 @@ class Message(UsesSession, _Indexed):
         )
         forum_parser.check_errors(res.text, res)
         return self
+
+    def update_quotefast(self):
+        """GETs the BBC of message on the specified :py:ivar:`mid`.
+        This uses the `quotefast` action."""
+        check_fields(self, "mid")
+        params = {
+            "quote": str(self.mid),
+            "xml": None,
+            "modify": None,  # allows posts from closed topics
+        }
+        res = api.do_action(
+            self.session, "quotefast", params=params,
+            no_percents=True
+        )
+        if "<html" in res.text:  # this is not XML!
+            forum_parser.check_errors(res.text, res)
+        post = forum_parser.parse_quotefast(res.text)
+        self.__init__(**post)
+        return self

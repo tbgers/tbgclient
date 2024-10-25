@@ -4,7 +4,7 @@ from tbgclient.exceptions import RequestError
 import re
 from typing import TypeVar, Callable
 from requests import Response
-from datetime import datetime
+from datetime import datetime, UTC
 
 T = TypeVar('T')
 date_format = "%b %d, %Y, %I:%M:%S %p"
@@ -222,4 +222,31 @@ def parse_page(document: str, page_parser: Callable[[BeautifulSoup],
         "current_page": current_page,
         "total_pages": total_pages,
         "contents": content
+    }
+
+
+def parse_quotefast(document: str) -> MessageData:
+    """Parses the XML given by the `quotefast` action.
+
+    :param document: The document.
+    :return: The parsed message
+    :rtype: MessageData
+    """
+
+    elm = xml_parser(document)
+    subject = elm.find("subject")
+    message = elm.find("message")
+    reason = elm.find("reason")
+
+    edit_time = int(reason.get("time"))
+    if edit_time == 0:
+        edit_time = None
+    else:
+        edit_time = datetime.fromtimestamp(edit_time, UTC)
+
+    return {
+        "subject": subject.text,
+        "content": message.text,
+        "mid": parse_integer(message.get("id")[4:]),
+        "edited": edit_time
     }
