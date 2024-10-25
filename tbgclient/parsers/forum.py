@@ -27,6 +27,13 @@ def parser(*args, **kwargs) -> BeautifulSoup:
     return BeautifulSoup(*args, **parser_config, **kwargs)
 
 
+def xml_parser(*args, **kwargs) -> BeautifulSoup:
+    """Convenience function for
+    ``BeautifulSoup(..., features="xml", **parser_config)``."""
+    kwargs = {**parser_config, **kwargs, "features": "xml"}
+    return BeautifulSoup(*args, **kwargs)
+
+
 def check_errors(document: str, response: Response) -> None:
     """Checks for an error message in this document.
 
