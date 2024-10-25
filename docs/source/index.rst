@@ -9,6 +9,8 @@ Welcome to tbgclient's documentation!
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
+   
+   qna.rst
 
 
 

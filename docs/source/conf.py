@@ -9,7 +9,7 @@
 project = 'tbgclient'
 copyright = '2023, Gilbert189'
 author = 'Gilbert189'
-release = '1.0.0a1'
+release = '0.4.0a4'
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
@@ -18,7 +18,6 @@ extensions = []
 
 templates_path = ['_templates']
 exclude_patterns = []
-
 
 
 # -- Options for HTML output -------------------------------------------------
