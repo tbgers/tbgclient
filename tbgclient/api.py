@@ -40,7 +40,7 @@ def request(session: Session, method: str, url: str,
 
 def do_action(session: Session, action: str, method: str = "GET",
               params: dict[str, str] = {}, queries: dict[str, Any] = {},
-              **kwargs) -> requests.Response:
+              no_percents=False, **kwargs) -> requests.Response:
     """Sends an action to the server.
 
     An action is a forum feature that is executed when the URL contains the
@@ -55,7 +55,9 @@ def do_action(session: Session, action: str, method: str = "GET",
     :param params: The parameters of the action.
     :type params: dict[str, str]
     :param queries: Additional queries for the action.
-    :type params: dict[str, str]
+    :type queries: dict[str, str]
+    :param no_percents: Whether to deter %-escapes. Useful for some actions.
+    :type no_percents: bool
     :return: The response.
     :rtype: requests.Response
     """
@@ -63,10 +65,15 @@ def do_action(session: Session, action: str, method: str = "GET",
         return urllib.parse.quote(x, safe='')
     params_string = "".join(
         f";{preprocess(k)}={preprocess(v)}"
+        if v is not None
+        else f";{preprocess(k)}"
         for k, v in params.items()
     )
+    payload = {**queries, "action": action + params_string}
+    if no_percents:
+        payload = urllib.parse.urlencode(payload, safe=';=')
     return request(session, method, FORUM_URL,
-                   params={**queries, "action": action + params_string},
+                   params=payload,
                    **kwargs)
 
 
