@@ -7,7 +7,9 @@ from . import exceptions
 
 from .forum import Message, Topic, User, Page
 from .session import Session
+from .protocols.forum import Smilies, PostIcons, UserGroup
 
 __all__ = [
-    "api", "exceptions", "Message", "Topic", "User", "Page", "Session"
+    "api", "exceptions", "Message", "Topic", "User", "Page", "Session",
+    "Smilies", "PostIcons", "UserGroup"
 ]
