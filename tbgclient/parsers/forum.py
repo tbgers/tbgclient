@@ -5,6 +5,7 @@ import re
 from typing import TypeVar, Callable
 from requests import Response
 from datetime import datetime, UTC
+from urllib.parse import urlparse, parse_qs
 
 T = TypeVar('T')
 date_format = "%b %d, %Y, %I:%M:%S %p"
@@ -186,6 +187,74 @@ def parse_topic_content(content: BeautifulSoup) -> list[MessageData]:
     forum_posts = content.find("div", {"id": "forumposts"})
     messages = forum_posts.find_all("div", {"id": re.compile(r"msg\d+")})
     return [parse_message(msg) for msg in messages]
+
+
+def parse_search_item(msg: BeautifulSoup) -> MessageData:
+    """Parse a search item.
+
+    :param msg: The message element.
+    :type msg: BeautifulSoup
+    :return: The parsed message.
+    :rtype: MessageData
+    """
+    # We are assuming SMF can only search for posts
+    # and not topics like in FluxBB.
+    topic_details = msg.contents[3]
+    location = topic_details.find("h5")
+    smalltext = topic_details.find("span")
+    content = msg.contents[5]
+
+    forum_link = location.contents[0]
+    topic_link = location.contents[2]
+    user_link = smalltext.contents[1].contents[0]
+    date_text = smalltext.contents[2][3:]  # date text has " - " preceeding it
+
+    # forum
+    forum_name = forum_link.text
+    forum_link = urlparse(forum_link.get("href"))
+    fid = parse_qs(forum_link.query)["board"][0].split(".")[0]
+    # topic
+    subject = topic_link.get("title")
+    topic_link = urlparse(topic_link.get("href"))
+    tid = parse_qs(topic_link.query)["topic"][0].split(".")[0]
+    mid = int(topic_link.fragment[3:])
+    # user
+    username = user_link.text
+    user_query = parse_qs(user_link.get("href"))
+    # Note the version difference:
+    # Older version of Python may seperate ; as well as &
+    # (meaning user_query will have "u")
+    # This is no longer the case since 3.10
+    if "u" in user_query:
+        uid = user_query["u"]
+    else:
+        uid = parse_qs(user_query["action"][0], separator=";")["u"]
+
+    return {
+        "forum_name": forum_name,
+        "fid": int(fid),
+        "subject": subject,
+        "tid": int(tid),
+        "mid": mid,
+        "user": {
+            "name": username,
+            "uid": int(uid[0])
+        },
+        "date": datetime.strptime(date_text, date_format),
+        "content": "".join(map(str, content.children)).strip(),
+    }
+
+
+def parse_search_content(content: BeautifulSoup) -> list[MessageData]:
+    """Parse ``#content_section`` of a search page.
+
+    :param content: The ``#content_section`` element of the page.
+    :type content: BeautifulSoup
+    :return: A list of messages.
+    :rtype: list[MessageData]
+    """
+    items = content.find_all("div", {"class": "windowbg"})
+    return [parse_search_item(item) for item in items]
 
 
 def parse_page(document: str, page_parser: Callable[[BeautifulSoup],
