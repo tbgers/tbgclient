@@ -4,10 +4,8 @@ Questions and Answers
 
 Programming
 ===========
-When I tried to make a request, it says ``"No default session is defined"``.
-----------------------------------------------------------------------------
-..
-    I've defined my logged-in session, but tbgclient doesn't use it! 
+I've defined my logged-in session, but tbgclient doesn't use it! 
+----------------------------------------------------------------
 
 Try encasing your request with the ``with`` statement:
 
