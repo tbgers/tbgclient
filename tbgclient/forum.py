@@ -7,8 +7,8 @@ from .protocols.forum import Indexed, UserGroup, Paged, PostIcons, UserData
 from .exceptions import RequestError, IncompleteError
 from . import api
 from .parsers import forum as forum_parser
-from dataclasses import dataclass, InitVar
-from typing import TypeVar, Generic, TypedDict
+from dataclasses import dataclass, InitVar, fields
+from typing import TypeVar, Generic, TypedDict, Self
 from warnings import warn
 
 T = TypeVar("T")
@@ -26,29 +26,53 @@ def check_fields(self, *fields):
 
 class _Indexed(Indexed):
     """An altered version of Indexed."""
+    default_update_method = "get"
+    default_submit_method = "post"
 
-    def update(self, method=str) -> None:
+    def update(self, method=None, **kwargs) -> Self:
         """See :py:class:`Indexed`.
 
         :param method: The method to use.
         :raise IncompleteError: Some necessary fields are not defined.
         """
+        if method is None:
+            method = self.default_update_method
         attrs = dir(self)
+        my_fields = {field.name for field in fields(self)}
         method_name = "update_" + method
+
+        excess_kwargs = {}
+        for k, v in kwargs.items():
+            if k in my_fields:
+                setattr(self, k, v)
+            else:
+                excess_kwargs[k] = v
+
         if method_name in attrs:
-            getattr(self, method_name)(self)
+            return getattr(self, method_name, **excess_kwargs)(self)
         else:
             raise NotImplementedError(f"method {method} not implemented")
 
-    def submit(self, method=str) -> None:
+    def submit(self, method=None, **kwargs) -> Self:
         """See :py:class:`Indexed`.
 
         :param method: The method to use.
         :raise IncompleteError: Some necessary fields are not defined."""
+        if method is None:
+            method = self.default_submit_method
         attrs = dir(self)
+        my_fields = {field.name for field in fields(self)}
         method_name = "submit_" + method
+
+        excess_kwargs = {}
+        for k, v in kwargs.items():
+            if k in my_fields:
+                setattr(self, k, v)
+            else:
+                excess_kwargs[k] = v
+
         if method_name in attrs:
-            getattr(self, method_name)(self)
+            return getattr(self, method_name, **excess_kwargs)(self)
         else:
             raise NotImplementedError(f"method {method} not implemented")
 
