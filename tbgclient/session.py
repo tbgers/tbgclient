@@ -72,7 +72,7 @@ class Session:
         :param username: The username.
         :param password: The password.
         """
-        res = api.login(self, username, password, cookies=self.cookies)
+        res = api.login(self, username, password)
         self.cookies.update(res.cookies)
 
     def request(self, *args, **kwargs):
