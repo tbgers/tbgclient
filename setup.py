@@ -5,6 +5,15 @@ here = pathlib.Path(__file__).parent.resolve()
 
 # Get the long description from the README file
 long_description = (here / "README.rst").read_text(encoding="utf-8")
+ROOT = "tbgclient"
+
+
+def rootify(packages):
+    return [ROOT] + [
+        f"{ROOT}.{package}" 
+        for package in packages
+    ]
+
 
 setup(
     name='tbgclient',
@@ -13,6 +22,6 @@ setup(
     long_description=long_description,
     author='Gilbert189',
     author_email='gilbertdannellelo@gmail.com',
-    packages=find_packages("tbgclient"),  # same as name
-    install_require=['requests', 'beautifulsoup4'],
+    packages=rootify(find_packages(ROOT)),  # same as name
+    install_requires=['requests', 'beautifulsoup4'],
 )
