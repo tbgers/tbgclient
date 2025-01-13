@@ -11,6 +11,7 @@ from .protocols.forum import Smilies, PostIcons, UserGroup
 
 Session().make_default()
 
+
 __all__ = [
     "api", "exceptions", "Message", "Topic", "User", "Page", "Session",
     "Smilies", "PostIcons", "UserGroup"
