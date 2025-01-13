@@ -8,7 +8,7 @@ from . import api
 from asyncio import current_task, Task
 from threading import current_thread, Thread
 from multiprocessing import current_process
-from typing import Optional, Union
+from typing import Optional, Union, Any, Self
 
 """
 Since allowing different tasks, threads, or process clobbering the same stack
@@ -34,7 +34,7 @@ def get_context() -> tuple[Union[Task, ..., None], Thread, "BaseProcess"]:
     return task, thread, process
 
 
-def push_session(session):
+def push_session(session: "Session") -> None:
     """Push this session to the current session stack."""
     context = get_context()
     if context not in _sessions:
@@ -59,7 +59,7 @@ class Session:
     session: requests.Session
     cookies: RequestsCookieJar
 
-    def __init__(self, get_sess_id=False):
+    def __init__(self: Self, get_sess_id: bool = False) -> None:
         self.session = requests.Session()
         self.cookies = RequestsCookieJar()
         if get_sess_id:
@@ -67,7 +67,7 @@ class Session:
             self.request("GET", api.FORUM_URL, allow_redirects=False)
         pass
 
-    def login(self, username, password):
+    def login(self: Self, username: str, password: str) -> None:
         """Logs in the session to a user.
         :param username: The username.
         :param password: The password.
@@ -75,7 +75,7 @@ class Session:
         res = api.login(self, username, password)
         self.cookies.update(res.cookies)
 
-    def request(self, *args, **kwargs):
+    def request(self: Self, *args: Any, **kwargs: Any) -> requests.Response:
         """Do a request using this Session's cookie jar."""
         if "cookies" in kwargs:
             kwargs["cookies"] = {**kwargs["cookies"], **self.cookies}
@@ -83,18 +83,19 @@ class Session:
         self.cookies.update(res.cookies)
         return res
 
-    def __enter__(self):
+    def __enter__(self: Self) -> Self:
         """Use this session for the following context."""
         push_session(self)
         return self
 
-    def __exit__(self, exc_type, exc_value, traceback):
+    def __exit__(self: Self, exc_type: Exception, exc_value: Any,
+                 traceback: Any) -> None:
         # check if someone has tampered with the stack
         popped = pop_session()
         if popped is not self:
             raise RuntimeError("Stack mismatch, did something tampered it?")
 
-    def make_default(self):
+    def make_default(self: Self) -> None:
         """Make this Session object the default for requests."""
         global default_session
         default_session = self
@@ -106,7 +107,7 @@ class UsesSession:
     This provides the property :py:ivar:`session` which is the session used in
     this context."""
     @property
-    def session(self):
+    def session(self: Self) -> Session:
         context = get_context()
         if context not in _sessions:
             if default_session is None:
