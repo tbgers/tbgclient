@@ -8,9 +8,9 @@ long_description = (here / "README.rst").read_text(encoding="utf-8")
 ROOT = "tbgclient"
 
 
-def rootify(packages):
+def rootify(packages):  # noqa
     return [ROOT] + [
-        f"{ROOT}.{package}" 
+        f"{ROOT}.{package}"
         for package in packages
     ]
 
