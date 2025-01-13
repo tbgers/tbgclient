@@ -55,11 +55,11 @@ def check_errors(document: str, response: Response) -> None:
         )
     errors = elm.find("div", {"id": "errors"})
     if errors is not None:
-        errors_dt = errors.contents[0].text
-        errors_dd = errors.contents[0].contents[1]
+        errors_dt = errors.contents[1].text
+        errors_dd = errors.contents[1].contents[3]
         raise RequestError(
             f"{errors_dt}: \n"
-            + "\n".join(str(string) for string in errors_dd.contents[::2]),
+            + "\n".join(str(string).strip() for string in errors_dd.contents[::2]),
             response=response
         )
 
