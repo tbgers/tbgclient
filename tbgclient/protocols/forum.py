@@ -59,7 +59,7 @@ class Paged(ABC, Sequence, Generic[T]):
             x = length - x
         if x < 0 or x >= length:
             raise IndexError("list index out of range")
-        return self.get_page(x - 1)
+        return self.get_page(x + 1)
 
     def __len__(self):
         return self.get_size()
