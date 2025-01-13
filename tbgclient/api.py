@@ -33,7 +33,7 @@ def request(session: Session, method: str, url: str,
     """
     res = session.request(method, url, **kwargs)
     if res.status_code > 400 and raise_on_error_code:
-        raise RequestError(f"{method} {url} returns {res.status_code}",
+        raise RequestError(f"{method} {res.url} returns {res.status_code}",
                            response=res)
     return res
 
