@@ -1,4 +1,5 @@
 import requests
+from typing import Self
 
 
 class RequestError(Exception):
@@ -10,7 +11,7 @@ class RequestError(Exception):
 
     :ivar response: The response that caused the exception.
     """
-    def __init__(self, *args, response: requests.Response):
+    def __init__(self: Self, *args, response: requests.Response) -> None:
         super().__init__(*args)
         self.response = response
 
@@ -18,6 +19,6 @@ class RequestError(Exception):
 class IncompleteError(Exception):
     """Called when an object cannot execute a function due to an undefined
     instance variable."""
-    def __init__(self, missing):
+    def __init__(self: Self, missing: str) -> None:
         super().__init__(f"{', '.join(missing)} not specified")
         self.missing = missing

@@ -16,7 +16,7 @@ class Indexed(ABC):
 
     # RFE: it would be nicer if we can just match function under a prefix
     @abstractmethod
-    def update(self, method: str) -> Self:
+    def update(self: Self, method: str) -> Self:
         """Updates this object.
 
         This function is to modify objects that already exists on the TBG
@@ -28,7 +28,7 @@ class Indexed(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def submit(self, method: str) -> Self:
+    def submit(self: Self, method: str) -> Self:
         """Submit this object.
 
         This function is to create objects that don't exist on the TBG server.
@@ -40,7 +40,7 @@ class Indexed(ABC):
 
 class Paged(ABC, Sequence, Generic[T]):
     @abstractmethod
-    def get_page(self, page=1) -> list[T]:
+    def get_page(self: Self, page: int = 1) -> list[T]:
         """Get the specified page.
 
         Note that this function is 1-indexed; use `__getitem__` for a
@@ -48,11 +48,11 @@ class Paged(ABC, Sequence, Generic[T]):
         raise NotImplementedError
 
     @abstractmethod
-    def get_size(self) -> int:
+    def get_size(self: Self) -> int:
         """Returns the length of this object."""
         raise NotImplementedError
 
-    def __getitem__(self, x):
+    def __getitem__(self: Self, x: int) -> list[T]:
         x = round(x)
         length = len(self)
         if x < 0:  # negative indicies wraps around
@@ -61,7 +61,7 @@ class Paged(ABC, Sequence, Generic[T]):
             raise IndexError("list index out of range")
         return self.get_page(x + 1)
 
-    def __len__(self):
+    def __len__(self: Self) -> int:
         return self.get_size()
 
 

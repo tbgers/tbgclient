@@ -14,7 +14,7 @@ from warnings import warn
 T = TypeVar("T")
 
 
-def check_fields(self, *fields):
+def check_fields(self: Self, *fields) -> Self:
     """Checks the field for this instance."""
     missing = []
     for field in fields:
@@ -29,7 +29,7 @@ class _Indexed(Indexed):
     default_update_method = "get"
     default_submit_method = "post"
 
-    def update(self, method=None, **kwargs) -> Self:
+    def update(self: Self, method: str = None, **kwargs) -> Self:
         """See :py:class:`Indexed`.
 
         :param method: The method to use.
@@ -53,7 +53,7 @@ class _Indexed(Indexed):
         else:
             raise NotImplementedError(f"method {method} not implemented")
 
-    def submit(self, method=None, **kwargs) -> Self:
+    def submit(self: Self, method: str = None, **kwargs) -> Self:
         """See :py:class:`Indexed`.
 
         :param method: The method to use.
@@ -95,7 +95,7 @@ class Page(Generic[T]):
     content_type: InitVar[T]
     session: InitVar[Session]
 
-    def __post_init__(self, content_type: T, session: Session):
+    def __post_init__(self: Self, content_type: T, session: Session) -> None:
         # cast self.contents with content_type
         self.contents = [
             content_type(**x) for x in self.contents
@@ -132,10 +132,10 @@ class Topic(Paged, UsesSession, _Indexed):
     topic_name: str = None
     pages: int = None
 
-    def __post_init__(self):
+    def __post_init__(self: Self) -> None:
         self.total_pages = 0
 
-    def update_get(self):
+    def update_get(self: Self) -> Self:
         """GET this topic on the specified :py:ivar:`tid`."""
         check_fields(self, "tid")
         res = api.get_topic_page(self.session, self.tid, 0)
@@ -149,7 +149,7 @@ class Topic(Paged, UsesSession, _Indexed):
         self.pages = parsed["total_pages"]
         return self
 
-    def get_page(self, page=1) -> list["Message"]:
+    def get_page(self: Self, page: int = 1) -> list["Message"]:
         """Gets a page of posts."""
         check_fields(self, "tid")
         res = api.get_topic_page(
@@ -168,7 +168,7 @@ class Topic(Paged, UsesSession, _Indexed):
         self.pages = parsed["total_pages"]
         return [Message(**msg) for msg in parsed["contents"]]
 
-    def get_size(self):
+    def get_size(self: Self) -> int:
         return self.pages
 
 
@@ -190,13 +190,13 @@ class Message(UsesSession, _Indexed):
     user: User | UserData = None
     icon: str | PostIcons = None
 
-    def __post_init__(self):
+    def __post_init__(self: Self) -> None:
         if type(self.user) is dict:
             self.user = User(**self.user)
         if type(self.icon) is str:
             self.icon = PostIcons(self.icon)
 
-    def submit_post(self):
+    def submit_post(self: Self) -> Self:
         """POST this message on the specified :py:ivar:`tid`."""
         check_fields(self, "tid")
         res = api.post_message(
@@ -205,7 +205,7 @@ class Message(UsesSession, _Indexed):
         forum_parser.check_errors(res.text, res)
         return self
 
-    def update_get(self):
+    def update_get(self: Self) -> Self:
         """GET this message on the specified :py:ivar:`mid`."""
         check_fields(self, "mid")
         res = api.get_message_page(
@@ -225,7 +225,7 @@ class Message(UsesSession, _Indexed):
                                request=res)
         return self
 
-    def submit_edit(self, reason=""):
+    def submit_edit(self: Self, reason: str = "") -> Self:
         """POST an edit with a specified reason."""
         check_fields(self, "mid", "tid")
         res = api.edit_message(
@@ -235,7 +235,7 @@ class Message(UsesSession, _Indexed):
         forum_parser.check_errors(res.text, res)
         return self
 
-    def update_quotefast(self):
+    def update_quotefast(self: Self) -> Self:
         """GETs the BBC of message on the specified :py:ivar:`mid`.
         This uses the `quotefast` action."""
         check_fields(self, "mid")

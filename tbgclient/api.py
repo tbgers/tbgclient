@@ -40,7 +40,7 @@ def request(session: Session, method: str, url: str,
 
 def do_action(session: Session, action: str, method: str = "GET",
               params: dict[str, str] = {}, queries: dict[str, Any] = {},
-              no_percents=False, **kwargs) -> requests.Response:
+              no_percents: bool = False, **kwargs) -> requests.Response:
     """Sends an action to the server.
 
     An action is a forum feature that is executed when the URL contains the
@@ -61,8 +61,10 @@ def do_action(session: Session, action: str, method: str = "GET",
     :return: The response.
     :rtype: requests.Response
     """
-    def preprocess(x):
+
+    def preprocess(x: str) -> str:
         return urllib.parse.quote(x, safe='')
+
     params_string = "".join(
         f";{preprocess(k)}={preprocess(v)}"
         if v is not None
