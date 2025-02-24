@@ -8,7 +8,9 @@ from . import api
 from asyncio import current_task, Task
 from threading import current_thread, Thread
 from multiprocessing import current_process
-from typing import Optional, Union, Any, Self
+from typing import Optional, Union, Any, Self, TypeVar, Generic, TYPE_CHECKING
+if TYPE_CHECKING:
+    import tbgclient
 
 """
 Since allowing different tasks, threads, or process clobbering the same stack
@@ -18,6 +20,7 @@ session stack.
 
 _sessions = {}
 default_session: Optional["Session"] = None
+T = TypeVar("T")
 
 
 def get_context() -> tuple[Union[Task, ..., None], Thread, "BaseProcess"]:
@@ -100,12 +103,37 @@ class Session:
         global default_session
         default_session = self
 
+    def get_message(self: Self, mid: int, method: str = "get"
+                    ) -> "SessionContext[tbgclient.forum.Message]":
+        """Gets a message with the specified message ID.
+
+        The result is wrapped in a :py:class:`SessionContext`.
+        :param mid: The message ID.
+        :param method: The method to use. See
+                       :py:class:`tbgclient.forum.Message`.
+        """
+        from .forum import Message
+        return Message(mid=mid).using(self).update(method=method)
+
+    def get_topic(self: Self, tid: int, method: str = "get"
+                  ) -> "SessionContext[tbgclient.forum.Topic]":
+        """Gets a topic with the specified topic ID.
+
+        The result is wrapped in a :py:class:`SessionContext`.
+        :param tid: The topic ID.
+        :param method: The method to use. See
+                       :py:class:`tbgclient.forum.Topic`.
+        """
+        from .forum import Topic
+        return Topic(tid=tid).using(self).update(method=method)
+
 
 class UsesSession:
     """A mixin for those that uses a session.
 
     This provides the property :py:ivar:`session` which is the session used in
-    this context."""
+    this context, along other things pertaining to session usage.
+    """
     @property
     def session(self: Self) -> Session:
         context = get_context()
@@ -114,3 +142,61 @@ class UsesSession:
                 raise RuntimeError("No default session is defined")
             return default_session
         return _sessions[context][-1]
+
+    def using(self: Self, session: Session) -> "SessionContext":
+        """Wrap this object in a new :py:class:`SessionContext`."""
+        return SessionContext(session, self)
+
+
+UsingSession = TypeVar("UsingSession", bound=UsesSession)
+
+
+class SessionContext(Generic[UsingSession]):
+    """A portable :py:class:`Session` context.
+
+    This class wraps some object :py:ivar:`value` that inherits
+    :py:class:`UsesSession` to use :py:ivar:`session`. The value wrapped
+    will have their calls be under the session context of :py:ivar:`session`.
+
+    :py:class:`SessionContext` also intercepts calls to :py:ivar:`value` to
+    determine whether or not to keep the context. The context is kept if the
+    value returned also inherits :py:class:`UsesSession`.
+    """
+    session: Session
+    value: UsingSession
+
+    def __init__(self: Self, session: Session, value: UsingSession) -> None:
+        self.session = session
+        if UsesSession not in type(value).__bases__:
+            raise ValueError("Only values that uses sessions can be used")
+        self.value = value
+
+    def __getattr__(self: Self, name: str) -> Any:
+        attr = getattr(self.value, name)
+        # duck check if `attr` is callable
+        try:
+            attr.__call__
+            # if `attr` is callable, wrap it onto a wrapper which decides
+            # whether to keep the context or not
+
+            def wrapper(*args: Any, **kwargs) -> Any:
+                with self.session:
+                    result = attr(*args, **kwargs)
+                if UsesSession in type(result).__bases__:
+                    # if the result uses a session, update this session
+                    # to use this value
+                    self.value = result
+                    return self
+                else:
+                    # if not, just return the result as it is,
+                    # thereby losing the context in the process
+                    return result
+            return wrapper
+        except AttributeError:
+            # if `attr` is not callable, return it as it is
+            return attr
+
+    def using(self: Self, session: Session) -> "SessionContext":
+        """Create a new :py:class:`SessionContext` using the specified
+        session."""
+        return SessionContext(session, self.value)
