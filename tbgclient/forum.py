@@ -216,13 +216,13 @@ class Message(UsesSession, _Indexed):
             res.text,
             forum_parser.parse_topic_content
         )
-        post = filter(lambda x: x["mid"] == 739696, parsed["contents"])
+        post = filter(lambda x: x["mid"] == self.mid, parsed["contents"])
         try:
             post = next(post)
             self.__init__(**post)
         except StopIteration:
             raise RequestError("Requested post doesn't exist in page",
-                               request=res)
+                               response=res)
         return self
 
     def submit_edit(self: Self, reason: str = "") -> Self:
