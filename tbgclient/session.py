@@ -200,3 +200,6 @@ class SessionContext(Generic[UsingSession]):
         """Create a new :py:class:`SessionContext` using the specified
         session."""
         return SessionContext(session, self.value)
+
+    def __repr__(self: Self) -> str:
+        return f"<SessionContext of {self.session} for {self.value}>"
