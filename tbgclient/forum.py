@@ -1,7 +1,7 @@
 """
 Classes that signifies parts of a forum.
 """
-from .session import Session, UsesSession
+from .session import UsesSession
 from .protocols.forum import Indexed, UserGroup, Paged, PostIcons, UserData
 # from .protocols.forum import
 from .exceptions import RequestError, IncompleteError
@@ -93,9 +93,8 @@ class Page(Generic[T]):
     total_pages: int
     contents: list[TypedDict]
     content_type: InitVar[T]
-    session: InitVar[Session]
 
-    def __post_init__(self: Self, content_type: T, session: Session) -> None:
+    def __post_init__(self: Self, content_type: T) -> None:
         # cast self.contents with content_type
         self.contents = [
             content_type(**x) for x in self.contents
@@ -137,19 +136,15 @@ class Topic(Paged, UsesSession, _Indexed):
 
     def update_get(self: Self) -> Self:
         """GET this topic on the specified :py:ivar:`tid`."""
-        check_fields(self, "tid")
-        res = api.get_topic_page(self.session, self.tid, 0)
-        parsed = forum_parser.parse_page(
-            res.text,
-            forum_parser.parse_topic_content
-        )
-        last_item = parsed["hierarchy"][-1]
+        page = self.get_page()
+        # Update my own fields
+        last_item = page.hierarchy[-1]
         last_name, _last_url = last_item
         self.topic_name = last_name
-        self.pages = parsed["total_pages"]
+        self.pages = page.total_pages
         return self
 
-    def get_page(self: Self, page: int = 1) -> list["Message"]:
+    def get_page(self: Self, page: int = 1) -> Page["Message"]:
         """Gets a page of posts."""
         check_fields(self, "tid")
         res = api.get_topic_page(
@@ -164,9 +159,7 @@ class Topic(Paged, UsesSession, _Indexed):
         # just in case update_get() hasn't been called
         last_item = parsed["hierarchy"][-1]
         last_name, _last_url = last_item
-        self.name = last_name
-        self.pages = parsed["total_pages"]
-        return [Message(**msg) for msg in parsed["contents"]]
+        return Page(**parsed, content_type=Message)
 
     def get_size(self: Self) -> int:
         return self.pages
