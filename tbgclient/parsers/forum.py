@@ -176,8 +176,10 @@ def parse_message(msg: BeautifulSoup) -> MessageData:
     }
 
 
-def parse_topic_content(content: BeautifulSoup) -> list[MessageData]:
+def parse_topic_content(content: BeautifulSoup,
+                        hierarchy: list[tuple[str, str]]) -> list[MessageData]:
     """Parse ``#content_section`` of a topic page.
+    This is meant to be used with :py:func:`parse_page`.
 
     :param content: The ``#content_section`` element of the page.
     :type content: BeautifulSoup
@@ -186,7 +188,18 @@ def parse_topic_content(content: BeautifulSoup) -> list[MessageData]:
     """
     forum_posts = content.find("div", {"id": "forumposts"})
     messages = forum_posts.find_all("div", {"id": re.compile(r"msg\d+")})
-    return [parse_message(msg) for msg in messages]
+    # Get the topic ID
+    queries = {
+        k: v[0]
+        for _, link in hierarchy
+        for k, v in parse_qs(urlparse(link).query).items()
+    }
+    tid = queries.setdefault('topic', '0')
+    tid = int(tid.split(".")[0])
+    return [
+        {"tid": tid, **parse_message(msg)}
+        for msg in messages
+    ]
 
 
 def parse_search_item(msg: BeautifulSoup) -> MessageData:
@@ -245,8 +258,12 @@ def parse_search_item(msg: BeautifulSoup) -> MessageData:
     }
 
 
-def parse_search_content(content: BeautifulSoup) -> list[MessageData]:
+def parse_search_content(
+    content: BeautifulSoup,
+    hierarchy: list[tuple[str, str]]
+) -> list[MessageData]:
     """Parse ``#content_section`` of a search page.
+    This is meant to be used with :py:func:`parse_page`.
 
     :param content: The ``#content_section`` element of the page.
     :type content: BeautifulSoup
@@ -284,7 +301,7 @@ def parse_page(document: str, page_parser: Callable[[BeautifulSoup],
     current_page = int(pagelinks.find("span", {"class": "current_page"}).text)
     total_pages = parse_integer(pages[-1].text)
     # get content
-    content = page_parser(content_section)
+    content = page_parser(content_section, hierarchy)
 
     return {
         "hierarchy": hierarchy,
