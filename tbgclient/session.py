@@ -99,7 +99,7 @@ class Session:
             raise RuntimeError("Stack mismatch, did something tampered it?")
 
     def make_default(self: Self) -> None:
-        """Make this Session object the default for requests."""
+        """Make this :py:class:`Session` object the default for requests."""
         global default_session
         default_session = self
 

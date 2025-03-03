@@ -104,7 +104,7 @@ class Page(Generic[T]):
 
 @dataclass
 class User(UsesSession, _Indexed):
-    """Class that represents a user."""
+    """A class that represents a user."""
     uid: int = None
     name: str = None
     avatar: str = None
@@ -122,7 +122,7 @@ class User(UsesSession, _Indexed):
 
 @dataclass
 class Topic(Paged, UsesSession, _Indexed):
-    """A type that contains information about a topic.
+    """A class that represents a topic.
 
     :ivar tid: The topic ID.
     :ivar topic_name: The topic name.
@@ -174,7 +174,7 @@ class Topic(Paged, UsesSession, _Indexed):
 
 @dataclass
 class Message(UsesSession, _Indexed):
-    """Class that represents a message.
+    """A class that represents a message.
 
     A message (usually called a post) is the smallest unit of a forum. It
     carries a string of text as the content of the message, consisting of

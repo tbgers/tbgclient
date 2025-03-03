@@ -39,17 +39,20 @@ class Indexed(ABC):
 
 
 class Paged(ABC, Sequence, Generic[T]):
+    """ABC for anything that has pages on it. (for example, topics)"""
     @abstractmethod
     def get_page(self: Self, page: int = 1) -> list[T]:
         """Get the specified page.
 
-        Note that this function is 1-indexed; use `__getitem__` for a
-        0-indexed version of this function."""
+        Note that this function is 1-indexed; use the usual subscript
+        expression for the 0-indexed version of this function."""
         raise NotImplementedError
 
     @abstractmethod
     def get_size(self: Self) -> int:
-        """Returns the length of this object."""
+        """Returns the length of this object.
+
+        For the best perfomance, this function should be cached."""
         raise NotImplementedError
 
     def __getitem__(self: Self, x: int) -> list[T]:
