@@ -10,6 +10,7 @@ from .parsers import forum as forum_parser
 from dataclasses import dataclass, InitVar, fields
 from typing import TypeVar, Generic, TypedDict, Self
 from warnings import warn
+from collections.abc import Iterator
 
 T = TypeVar("T")
 
@@ -99,6 +100,9 @@ class Page(Generic[T]):
         self.contents = [
             content_type(**x) for x in self.contents
         ]
+
+    def __iter__(self: Self) -> Iterator[T]:
+        return iter(self.contents)
 
 
 @dataclass
