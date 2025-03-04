@@ -50,7 +50,7 @@ class _Indexed(Indexed):
                 excess_kwargs[k] = v
 
         if method_name in attrs:
-            return getattr(self, method_name, **excess_kwargs)(self)
+            return getattr(self, method_name)(**excess_kwargs)
         else:
             raise NotImplementedError(f"method {method} not implemented")
 
@@ -73,7 +73,7 @@ class _Indexed(Indexed):
                 excess_kwargs[k] = v
 
         if method_name in attrs:
-            return getattr(self, method_name, **excess_kwargs)(self)
+            return getattr(self, method_name)(**excess_kwargs)
         else:
             raise NotImplementedError(f"method {method} not implemented")
 
