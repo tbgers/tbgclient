@@ -9,7 +9,6 @@ from email.utils import parsedate_to_datetime as parse_date
 
 def parse_response(response: str) -> ResponseData:
     document = BeautifulSoup(response, features="xml")
-    print(document)
 
     # Parse the info, if it exists.
     infos = {}
@@ -33,8 +32,8 @@ def parse_response(response: str) -> ResponseData:
             "mid": int(message["id"]),
             "date": parse_date(message["dateTime"]),
             "user": {
-                "uid": int(username["userID"]),
-                "group": username["userRole"],
+                "uid": int(message["userID"]),
+                "group": message["userRole"],
                 "name": username.contents[0],
             },
             "cid": int(message["channelID"]),
