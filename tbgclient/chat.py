@@ -98,7 +98,16 @@ class ChatConnection:
         return res["infos"]
 
     def messages(self: Self) -> Generator[Message]:
-        """A generator that iterates through messages."""
+        """A generator that iterates through messages.
+
+        .. note:: When the chat is polled for the first time, some past
+        messages are put in the buffer, which may be undesired. To prevent
+        this, you can empty the buffer by calling :py:func:`clear_buffer`:
+        .. code-block:: python
+            chat.poll()
+            chat.clear_buffer()
+            while True:
+                ..."""
         while len(self.__buffer) > 0:
             if self.__read_mid in self.__buffer:
                 yield self.__buffer[self.__read_mid]
@@ -106,6 +115,11 @@ class ChatConnection:
             self.__read_mid += 1
         # HACK: need to backtrack to prevent infinite loop
         self.__read_mid -= 1
+
+    def clear_buffer(self: Self) -> None:
+        """Clear the message buffer."""
+        for _ in self.messages():
+            pass
 
     def send(self: Self, message: str) -> Response:
         """Send a message to the server. This also accept commands."""
