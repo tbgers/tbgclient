@@ -108,8 +108,10 @@ class ChatConnection:
         self.__read_mid -= 1
 
     def send(self: Self, message: str) -> Response:
+        """Send a message to the server. This also accept commands."""
         res = self.session.request(
             "POST", "https://tbgforums.com/forums/chat/",
-            data={"ajax": message},
+            data={"lastID": self.last_mid, "text": message},
+            params={"ajax": "true"},
         )
         return res
