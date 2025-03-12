@@ -7,10 +7,11 @@ class RequestError(Exception):
     failure response code or if an API call cannot be processed further.
 
     This exception provides the response causing the exception, accessable in
-    the attribute ``response``.
-
-    :ivar response: The response that caused the exception.
+    the attribute :py:attr:`response`.
     """
+
+    response: requests.Response
+    """The response that caused the exception."""
     def __init__(self: Self, *args, response: requests.Response) -> None:
         super().__init__(*args)
         self.response = response

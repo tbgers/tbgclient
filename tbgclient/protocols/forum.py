@@ -70,26 +70,26 @@ class Paged(ABC, Sequence, Generic[T]):
 
 class PageData(TypedDict, Generic[T], total=False):
     """A type that contains information about a page.
-
-    :ivar hiearchy: The forum ID.
-    :ivar current_page: The current page number.
-    :ivar total_pages: The total pages.
-    :ivar contents: The contents of the page.
     """
+
     hierarchy: list[tuple[str, str]]
+    """The hierarchy of this page."""
     current_page: int
+    """The current page number."""
     total_pages: int
+    """The total pages."""
     contents: list[T]
+    """The contents of the page."""
 
 
 class ForumData(TypedDict, total=False):
     """A type that contains information about a forum.
-
-    :ivar fid: The forum ID.
-    :ivar forum_name: The forum name.
     """
+
     fid: int
+    """The forum ID."""
     forum_name: str
+    """The forum name."""
 
 
 class TopicData(ForumData, total=False):
@@ -100,8 +100,9 @@ class TopicData(ForumData, total=False):
     :ivar pages: The amount of pages the topic has
     """
     tid: int
+    """The topic ID."""
     topic_name: str
-    pages: int
+    """The topic name."""
 
 
 class UserGroup(Enum):
@@ -153,51 +154,51 @@ class Smilies(Enum):
 
 class UserData(TypedDict, total=False):
     """A type that contains information about a user.
-
-    :ivar uid: The user's ID.
-    :ivar name: The user's name.
-    :ivar avatar: The avatar/profile picture of the user.
-    :ivar group: The user's group.
-    :ivar posts: The total amount of posts this user has made.
-    :ivar signature: The signature of this user.
-    :ivar email: The email address of this user.
-    :ivar blurb: The personal text of this user.
-    :ivar real_name: The real name of this user.
-    :ivar location: The location of this user.
-    :ivar social: The social names of this user.
-    :ivar website: The website URL of this user.
-    :ivar gender: The gender of this user.
     """
+
     uid: int
+    """The user's ID."""
     name: str
+    """The user's name."""
     avatar: str
+    """The avatar/profile picture of the user."""
     group: str | UserGroup
+    """The user's group."""
     posts: int
+    """The total amount of posts this user has made."""
     signature: str
+    """The signature of this user."""
     email: str
+    """The email address of this user."""
     blurb: str
+    """The personal text of this user."""
     location: str
+    """The location of this user."""
     real_name: str
+    """The real name of this user."""
     social: dict[str, str]
+    """Other identities of this user across different social medias."""
     website: str
+    """The website URL of this user."""
     gender: str
+    """The gender of this user."""
 
 
 class MessageData(TopicData, total=False):
     """A type that contains information about a message.
-
-    :ivar mid: The message ID.
-    :ivar title: The message title.
-    :ivar date: The date when this message was posted.
-    :ivar edited: The date when this message was last edited.
-    :ivar content: The message content.
-    :ivar user: The poster of the message.
-    :ivar icon: The icon used in the message. Usually this is invisible.
     """
+
     mid: int
+    """The message ID."""
     subject: str  # yes, this exists in SMF.
+    """The message subject."""
     date: str | datetime
+    """The date when this message was posted."""
     edited: str | None
+    """The date when this message was last edited."""
     content: str
+    """The message content."""
     user: UserData
+    """The poster of the message."""
     icon: str | PostIcons
+    """The icon used in the message. Usually this is invisible."""

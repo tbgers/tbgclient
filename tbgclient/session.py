@@ -154,11 +154,11 @@ UsingSession = TypeVar("UsingSession", bound=UsesSession)
 class SessionContext(Generic[UsingSession]):
     """A portable :py:class:`Session` context.
 
-    This class wraps some object :py:ivar:`value` that inherits
-    :py:class:`UsesSession` to use :py:ivar:`session`. The value wrapped
-    will have their calls be under the session context of :py:ivar:`session`.
+    This class wraps some object :py:attr:`value` that inherits
+    :py:class:`UsesSession` to use :py:attr:`session`. The value wrapped
+    will have their calls be under the session context of :py:attr:`session`.
 
-    :py:class:`SessionContext` also intercepts calls to :py:ivar:`value` to
+    :py:class:`SessionContext` also intercepts calls to :py:attr:`value` to
     determine whether or not to keep the context. The context is kept if the
     value returned also inherits :py:class:`UsesSession`.
     """

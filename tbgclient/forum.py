@@ -8,7 +8,7 @@ from .exceptions import RequestError, IncompleteError
 from . import api
 from .parsers import forum as forum_parser
 from dataclasses import dataclass, InitVar, fields
-from typing import TypeVar, Generic, TypedDict, Self
+from typing import TypeVar, Generic, Self
 from warnings import warn
 from collections.abc import Iterator
 
@@ -27,6 +27,7 @@ def check_fields(self: Self, *fields) -> Self:
 
 class _Indexed(Indexed):
     """An altered version of Indexed."""
+
     default_update_method = "get"
     default_submit_method = "post"
 
@@ -84,15 +85,16 @@ class Page(Generic[T]):
 
     This object is polymorphic; it can support pages of different content
     types.
+    """
 
-    :ivar hierarchy: The forum ID.
-    :ivar current_page: The current page number.
-    :ivar total_pages: The total pages.
-    :ivar contents: The contents of the page."""
     hierarchy: list[tuple[str, str]]
+    """The forum ID."""
     current_page: int
+    """The current page number."""
     total_pages: int
-    contents: list[TypedDict]
+    """The total pages."""
+    contents: list[T]
+    """The contents of the page."""
     content_type: InitVar[T]
 
     def __post_init__(self: Self, content_type: T) -> None:
@@ -125,15 +127,14 @@ class User(UsesSession, _Indexed):
 
 @dataclass
 class Topic(Paged, UsesSession, _Indexed):
-    """A class that represents a topic.
+    """A class that represents a topic."""
 
-    :ivar tid: The topic ID.
-    :ivar topic_name: The topic name.
-    :ivar pages: The amount of pages the topic has.
-    """
     tid: int = None
+    """The topic ID."""
     topic_name: str = None
+    """The topic name."""
     pages: int = None
+    """The amount of pages the topic has."""
 
     def __post_init__(self: Self) -> None:
         self.total_pages = 0
