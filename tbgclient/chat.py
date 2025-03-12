@@ -21,6 +21,17 @@ class Message(namedtuple("_Message", [
     .. note:: This should not be confused with
     :py:class:`tbgclient.forum.Message`."""
 
+    mid: int
+    """The message ID."""
+    user: User
+    """The poster of this message."""
+    cid: int
+    """The channel ID of this message."""
+    content: str
+    """The message content."""
+    date: str | datetime
+    """The date this message is posted."""
+
     def __new__(cls: "Message", *,
                 mid: int, user: UserData, cid: int,
                 content: str, date: datetime) -> None:
