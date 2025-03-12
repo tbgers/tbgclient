@@ -131,7 +131,7 @@ class Session:
 class UsesSession:
     """A mixin for those that uses a session.
 
-    This provides the property :py:ivar:`session` which is the session used in
+    This provides the property :py:attr:`session` which is the session used in
     this context, along other things pertaining to session usage.
     """
     @property
