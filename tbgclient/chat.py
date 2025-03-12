@@ -8,6 +8,7 @@ from .parsers.chat import parse_response
 from .protocols.forum import UserData
 from datetime import datetime
 from typing import Self, TYPE_CHECKING, Generator
+from requests import Response
 if TYPE_CHECKING:
     import tbgclient
 
@@ -94,3 +95,10 @@ class ChatConnection:
             self.__read_mid += 1
         # HACK: need to backtrack to prevent infinite loop
         self.__read_mid -= 1
+
+    def send(self: Self, message: str) -> Response:
+        res = self.session.request(
+            "POST", "https://tbgforums.com/forums/chat/",
+            data={"ajax": message},
+        )
+        return res
