@@ -130,7 +130,8 @@ class User(UsesSession, _Indexed):
         res = api.do_action(
             self.session,
             "profile",
-            params={"u": str(self.uid)}
+            params={"u": str(self.uid)},
+            no_percents=True
         )
         forum_parser.check_errors(res.text, res)
         parsed = forum_parser.parse_profile(res.text)
