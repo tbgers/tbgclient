@@ -219,15 +219,15 @@ def parse_search_item(msg: BeautifulSoup) -> MessageData:
     smalltext = topic_details.find("span")
     content = msg.contents[5]
 
-    forum_link = location.contents[0]
+    board_link = location.contents[0]
     topic_link = location.contents[2]
     user_link = smalltext.contents[1].contents[0]
     date_text = smalltext.contents[2][3:]  # date text has " - " preceeding it
 
-    # forum
-    forum_name = forum_link.text
-    forum_link = urlparse(forum_link.get("href"))
-    fid = parse_qs(forum_link.query)["board"][0].split(".")[0]
+    # board
+    board_name = board_link.text
+    board_link = urlparse(board_link.get("href"))
+    fid = parse_qs(board_link.query)["board"][0].split(".")[0]
     # topic
     subject = topic_link.get("title")
     topic_link = urlparse(topic_link.get("href"))
@@ -246,7 +246,7 @@ def parse_search_item(msg: BeautifulSoup) -> MessageData:
         uid = parse_qs(user_query["action"][0], separator=";")["u"]
 
     return {
-        "forum_name": forum_name,
+        "board_name": board_name,
         "fid": int(fid),
         "subject": subject,
         "tid": int(tid),

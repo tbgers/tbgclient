@@ -88,7 +88,7 @@ class Page(Generic[T]):
     """
 
     hierarchy: list[tuple[str, str]]
-    """The forum ID."""
+    """The hierarchy of this page."""
     current_page: int
     """The current page number."""
     total_pages: int

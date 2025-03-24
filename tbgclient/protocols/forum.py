@@ -82,17 +82,17 @@ class PageData(TypedDict, Generic[T], total=False):
     """The contents of the page."""
 
 
-class ForumData(TypedDict, total=False):
-    """A type that contains information about a forum.
+class BoardData(TypedDict, total=False):
+    """A type that contains information about a board.
     """
 
-    fid: int
-    """The forum ID."""
-    forum_name: str
-    """The forum name."""
+    bid: int
+    """The board ID."""
+    board_name: str
+    """The board name."""
 
 
-class TopicData(ForumData, total=False):
+class TopicData(BoardData, total=False):
     """A type that contains information about a topic.
 
     :ivar tid: The topic ID.
