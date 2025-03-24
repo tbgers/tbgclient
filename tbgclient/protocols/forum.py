@@ -152,6 +152,32 @@ class Smilies(Enum):
     COOL = "B)"
 
 
+class SearchType(Enum):
+    """Corresponds to the Match input (searchtype) on the Search form."""
+    ALL_WORDS = "1"
+    """Match all words."""
+    ANY_WORDS = "2"
+    """Match any words."""
+
+
+class SortBy(Enum):
+    """Corresponds to the Sort by input (sort) criteria on the Search form."""
+    RELEVANCE = "relevance"
+    """Sort by relevance; how many word matches."""
+    REPLIES = "num_replies"
+    """Sort by number of replies of the topic the message is posted."""
+    MESSAGE_ID = "id_msg"
+    """Sort by the message ID; generally this corresponds to their age."""
+
+
+class SortOrder(Enum):
+    """Corresponds to the Sort by input (sort) ordering on the Search form."""
+    ASC = "asc"
+    """Sort ascending."""
+    DESC = "desc"
+    """Sort descending."""
+
+
 class UserData(TypedDict, total=False):
     """A type that contains information about a user.
     """
