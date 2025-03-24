@@ -364,11 +364,13 @@ def parse_profile(document: str) -> UserData:
     # username
     username = basic_info.find("div", class_="username")
     result["group"] = username.find("span", class_="position").text
-    result["username"] = username.contents[0]  # the username string
+    result["name"] = username.contents[0]  # the username string
     # avatar
-    result["avatar"] = basic_info.find("div", class_="avatar").get("src")
+    avatar = basic_info.find("img", class_="avatar")
+    if avatar is not None:
+        result["avatar"] = avatar.get("src")
     # icon_fields
-    icon_fields = basic_info.find("div", class_="icon_fields")
+    icon_fields = basic_info.find("ul", class_="icon_fields")
     result["website"] = icon_fields.find("span", class_="www")
     if result["website"] is not None:
         result["website"] = result["website"].parent.get("href")
@@ -376,11 +378,11 @@ def parse_profile(document: str) -> UserData:
     if result["gender"] is not None:
         result["gender"] = result["gender"].get("title")
 
-    detailed_info = profile_view.find("div", {"id": "basicinfo"})
+    detailed_info = profile_view.find("div", {"id": "detailedinfo"})
     detailed_dict = reduce(dict.__or__, (
         dl_to_dict(dl)
         for dl in detailed_info.find_all("dl")
-    ))
+    ), {})
     # Map the terms into dictionary keys
     mapping = {
         # None means discard
@@ -398,7 +400,7 @@ def parse_profile(document: str) -> UserData:
         "Last active:": None,
     }
     result["social"] = {}
-    for dt, dd in detailed_dict:
+    for dt, dd in detailed_dict.items():
         key = dt.text.strip()
         if key in mapping and mapping[key] is not None:
             result[mapping[key]] = dd.text
