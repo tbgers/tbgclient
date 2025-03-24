@@ -6,6 +6,7 @@ from typing import TypeVar, Callable
 from requests import Response
 from datetime import datetime, UTC
 from urllib.parse import urlparse, parse_qs
+from functools import reduce
 
 T = TypeVar('T')
 date_format = "%b %d, %Y, %I:%M:%S %p"
@@ -33,6 +34,13 @@ def xml_parser(*args, **kwargs) -> BeautifulSoup:
     ``BeautifulSoup(..., features="xml", **parser_config)``."""
     kwargs = {**parser_config, **kwargs, "features": "xml"}
     return BeautifulSoup(*args, **kwargs)
+
+
+def dl_to_dict(element: BeautifulSoup) -> dict[BeautifulSoup, BeautifulSoup]:
+    """Turn a description list into a dictionary."""
+    keys = [x for x in element.children if x.name == "dt"]
+    values = [x for x in element.children if x.name == "dd"]
+    return dict(zip(keys, values))
 
 
 def check_errors(document: str, response: Response) -> None:
@@ -338,3 +346,68 @@ def parse_quotefast(document: str) -> MessageData:
         "mid": parse_integer(message.get("id")[4:]),
         "edited": edit_time
     }
+
+
+def parse_profile(document: str) -> UserData:
+    """Parses the given user profile page.
+    :param document: The document.
+    :type document: str
+    :return: The parsed profile.
+    :rtype: UserData
+    """
+    elm = parser(document)
+    profile_view = elm.find("div", {"id": "profileview"})
+
+    result: UserData = {}
+
+    basic_info = profile_view.find("div", {"id": "basicinfo"})
+    # username
+    username = basic_info.find("div", class_="username")
+    result["group"] = username.find("span", class_="position").text()
+    result["username"] = username.contents[0]  # the username string
+    # avatar
+    result["avatar"] = basic_info.find("div", class_="avatar").get("src")
+    # icon_fields
+    icon_fields = basic_info.find("div", class_="icon_fields")
+    result["website"] = icon_fields.find("span", class_="www")
+    if result["website"] is not None:
+        result["website"] = result["website"].parent.get("href")
+    result["gender"] = icon_fields.find("span", class_=re.compile("^gender"))
+    if result["gender"] is not None:
+        result["gender"] = result["gender"].get("title")
+
+    detailed_info = profile_view.find("div", {"id": "basicinfo"})
+    detailed_dict = reduce(dict.__or__, (
+        dl_to_dict(dl)
+        for dl in detailed_info.find_all("dl")
+    ))
+    # Map the terms into dictionary keys
+    mapping = {
+        # None means discard
+        # All that's not listed here will become social info
+        "Username:": None,
+        "Posts:": "posts",
+        "Email:": "email",
+        "Personal text:": "blurb",
+        "Age:": None,
+        "Real name:": "real_name",
+        "From:": "location",
+        # IDEA: add these fields?
+        "Date registered:": None,
+        "Local Time:": None,
+        "Last active:": None,
+    }
+    result["social"] = {}
+    for dt, dd in detailed_dict:
+        key = dt.text().strip()
+        if key in mapping and mapping[key] is not None:
+            result[mapping[key]] = dd.text()
+        else:
+            result["social"][key[:-1]] = dd.text()
+    # signature
+    signature = profile_view.find("div", class_="signature")
+    signature_title = signature.find("h5", text="Signature:")
+    signature_title.decompose()
+    result["signature"] = signature
+
+    return result
