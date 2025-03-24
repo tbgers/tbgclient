@@ -1,4 +1,4 @@
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, NavigableString
 from tbgclient.protocols.forum import MessageData, PageData, UserData
 from tbgclient.exceptions import RequestError
 import re
@@ -9,6 +9,16 @@ from urllib.parse import urlparse, parse_qs
 
 T = TypeVar('T')
 date_format = "%b %d, %Y, %I:%M:%S %p"
+date_regex = (
+    date_format
+    .replace("%b", r"\w+")
+    .replace("%d", r"\d\d")
+    .replace("%Y", r"\d\d\d\d")
+    .replace("%I", r"\d\d")
+    .replace("%M", r"\d\d")
+    .replace("%S", r"\d\d")
+    .replace("%p", r"(AM|PM)")
+)
 
 
 parser_config = dict(
@@ -214,15 +224,23 @@ def parse_search_item(msg: BeautifulSoup) -> MessageData:
     """
     # We are assuming SMF can only search for posts
     # and not topics like in FluxBB.
-    topic_details = msg.contents[3]
+    topic_details = msg.find("div", {"class": "topic_details"})
     location = topic_details.find("h5")
     smalltext = topic_details.find("span")
-    content = msg.contents[5]
+    content = msg.find("div", class_="list_posts")
 
     forum_link = location.contents[0]
     topic_link = location.contents[2]
-    user_link = smalltext.contents[1].contents[0]
-    date_text = smalltext.contents[2][3:]  # date text has " - " preceeding it
+    user_link = smalltext.find("a")
+    date_text = "".join(
+        child
+        for child in smalltext.children
+        if isinstance(child, NavigableString)
+    )
+    date_text = datetime.strptime(
+        re.search(date_regex, date_text)[0],
+        date_format
+    )
 
     # forum
     forum_name = forum_link.text
@@ -235,7 +253,8 @@ def parse_search_item(msg: BeautifulSoup) -> MessageData:
     mid = int(topic_link.fragment[3:])
     # user
     username = user_link.text
-    user_query = parse_qs(user_link.get("href"))
+    user_url = urlparse(user_link.get("href"))
+    user_query = parse_qs(user_url.query)
     # Note the version difference:
     # Older version of Python may seperate ; as well as &
     # (meaning user_query will have "u")
@@ -255,8 +274,12 @@ def parse_search_item(msg: BeautifulSoup) -> MessageData:
             "name": username,
             "uid": int(uid[0])
         },
-        "date": datetime.strptime(date_text, date_format),
-        "content": "".join(map(str, content.children)).strip(),
+        "date": date_text,
+        "content": (
+            "".join(map(str, content.children)).strip()
+            if content is not None
+            else None
+        ),
     }
 
 
