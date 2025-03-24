@@ -124,6 +124,19 @@ class User(UsesSession, _Indexed):
     website: str = None
     gender: str = None
 
+    def update_get(self: Self) -> Self:
+        """GET this message on the specified :py:ivar:`mid`."""
+        check_fields(self, "uid")
+        res = api.do_action(
+            self.session,
+            "profile",
+            params={"u": str(self.uid)}
+        )
+        forum_parser.check_errors(res.text, res)
+        parsed = forum_parser.parse_profile(res.text)
+        self.__init__(**parsed)
+        return self
+
 
 @dataclass
 class Topic(Paged, UsesSession, _Indexed):
