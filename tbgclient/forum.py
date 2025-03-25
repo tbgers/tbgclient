@@ -2,15 +2,20 @@
 Classes that signifies parts of a forum.
 """
 from .session import UsesSession
-from .protocols.forum import Indexed, UserGroup, Paged, PostIcons, UserData
+from .protocols.forum import (
+    Indexed, UserGroup, Paged, PostIcons, UserData, SearchType, SortBy,
+    SortOrder
+)
 # from .protocols.forum import
 from .exceptions import RequestError, IncompleteError
 from . import api
 from .parsers import forum as forum_parser
-from dataclasses import dataclass, InitVar, fields
-from typing import TypeVar, Generic, Self
+from dataclasses import dataclass, InitVar, fields, field
+from typing import TypeVar, Generic, Self, ClassVar
 from warnings import warn
 from collections.abc import Iterator
+import zlib
+import base64
 
 T = TypeVar("T")
 
@@ -267,3 +272,99 @@ class Message(UsesSession, _Indexed):
         post = forum_parser.parse_quotefast(res.text)
         self.__init__(**post)
         return self
+
+
+@dataclass(frozen=True)
+class Search(UsesSession, Paged):
+    """A class representing a search query.
+
+    .. warning:: Searching takes quite a long time for some reason.
+    Use sparingly."""
+
+    query: str
+    """The text to search for."""
+    match: str | SearchType = SearchType.ALL_WORDS
+    """The search criteria: either to match all words or any words."""
+    user: str = "*"
+    """Which user to search their posts, delimited with a comma.
+    ``*`` means all users."""
+    sort: str | SortBy = SortBy.RELEVANCE
+    """The sorting criteria."""
+    order: str | SortOrder = SortOrder.DESC
+    """The ordering of the sort."""
+    complete: bool = False
+    """Whether to show the search result as a complete message."""
+    subject_only: bool = False
+    """Whether to search the subject only or not."""
+    min_age: int = 0
+    """The minimal age for posts in days."""
+    max_age: int = 9999
+    """The maximal age for posts in days."""
+    forums: list[int] = field(
+        default_factory=lambda: list((2, 3, 5, 6))
+    )
+    """A list of forum IDs to search."""
+    # IDEA: Make this an enum?
+    MSGS_PER_PAGE: ClassVar[int] = 30
+
+    def __post_init__(self: Self) -> None:
+        # Enum-ify!
+        if type(self.match) is str:
+            self.match = SearchType[self.match.lower()]
+        if type(self.sort) is str:
+            self.sort = SortBy[self.sort.lower()]
+        if type(self.order) is str:
+            self.order = SortOrder[self.order.lower()]
+
+    def get_page(self: Self, page: int = 1) -> Page[Message]:
+        # This uses the params query string to provide parameters.
+        # Creation of this is based from this source code:
+        # https://github.com/SimpleMachines/SMF/blob/release-2.1/Sources/Search.php#L996-L1016
+        fields = {
+            # We're assuming this is always 1
+            # This is only used for one occasion
+            # https://github.com/SimpleMachines/SMF/blob/release-2.1/Sources/Search.php#L364-L366
+            "advanced": "1",
+            "brd": ",".join(map(str, self.forums)),
+            "sort": self.sort.value,
+            "sort_dir": self.order.value,
+            "search": self.query,
+            "minage": str(self.min_age),
+            "maxage": str(self.max_age),
+        }
+        if self.complete:
+            fields["show_complete"] = ""
+        if self.subject_only:
+            fields["subject_only"] = ""
+        # Convert
+        params = '|"|'.join(
+            key + "|'|" + value
+            for key, value in fields.items()
+        ).encode()
+        params = zlib.compress(params)
+        params = base64.b64encode(params)
+        params = (params
+                  .replace(b"+", b"-")
+                  .replace(b"/", b"_")
+                  .replace(b"=", b".")
+                  )
+
+        res = api.do_action(
+            self.session, "search2", params={
+                "params": params,
+                "start": str((page - 1) * self.MSGS_PER_PAGE)
+            },
+            no_percents=True
+        )
+        forum_parser.check_errors(res.text, res)
+        parsed = forum_parser.parse_page(
+            res.text,
+            forum_parser.parse_search_content
+        )
+        page = Page(**parsed, content_type=Message)
+        # HACK: Cannot write into frozen instance normally
+        # object.__setattr__(self, "pages")
+        return page
+
+    def get_size(self: Self) -> int:
+        raise NotImplementedError("TODO: Search.get_size")
