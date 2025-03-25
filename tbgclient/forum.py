@@ -365,8 +365,11 @@ class Search(UsesSession, Paged):
         )
         page = Page(**parsed, content_type=Message)
         # HACK: Cannot write into frozen instance normally
-        # object.__setattr__(self, "pages")
+        object.__setattr__(self, "pages", page.total_pages)
         return page
 
     def get_size(self: Self) -> int:
-        raise NotImplementedError("TODO: Search.get_size")
+        try:
+            return self.pages
+        except AttributeError:
+            return None
