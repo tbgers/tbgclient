@@ -10,16 +10,19 @@ from functools import reduce
 
 T = TypeVar('T')
 date_format = "%b %d, %Y, %I:%M:%S %p"
-date_regex = (
-    date_format
-    .replace("%b", r"\w+")
-    .replace("%d", r"\d\d")
-    .replace("%Y", r"\d\d\d\d")
-    .replace("%I", r"\d\d")
-    .replace("%M", r"\d\d")
-    .replace("%S", r"\d\d")
-    .replace("%p", r"(AM|PM)")
-)
+
+
+def date_regex() -> str:
+    return (
+        date_format
+        .replace("%b", r"\w+")
+        .replace("%d", r"\d\d")
+        .replace("%Y", r"\d\d\d\d")
+        .replace("%I", r"\d\d")
+        .replace("%M", r"\d\d")
+        .replace("%S", r"\d\d")
+        .replace("%p", r"(AM|PM)")
+    )
 
 
 parser_config = dict(
@@ -246,7 +249,7 @@ def parse_search_item(msg: BeautifulSoup) -> MessageData:
         if isinstance(child, NavigableString)
     )
     date_text = datetime.strptime(
-        re.search(date_regex, date_text)[0],
+        re.search(date_regex(), date_text)[0],
         date_format
     )
 
