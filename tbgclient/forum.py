@@ -23,7 +23,7 @@ T = TypeVar("T")
 def check_fields(self: Self, *fields) -> Self:
     """Checks the field for this instance."""
     missing = []
-    for field in fields:
+    for field in fields:  # noqa: F402
         if getattr(self, field) is None:
             missing.append(field)
     if missing != []:
