@@ -49,19 +49,21 @@ class Paged(ABC, Sequence, Generic[T]):
         raise NotImplementedError
 
     @abstractmethod
-    def get_size(self: Self) -> int:
-        """Returns the length of this object.
+    def get_size(self: Self) -> int | None:
+        """Return the length of this object. If the length is currently
+        unknown, return `None`.
 
         For the best perfomance, this function should be cached."""
         raise NotImplementedError
 
     def __getitem__(self: Self, x: int) -> list[T]:
         x = round(x)
-        length = len(self)
-        if x < 0:  # negative indicies wraps around
-            x = length - x
-        if x < 0 or x >= length:
-            raise IndexError("list index out of range")
+        length = self.__len__()
+        if length is not None:  # currently unknown
+            if x < 0:  # negative indicies wraps around
+                x = length - x
+            if x < 0 or x >= length:
+                raise IndexError("list index out of range")
         return self.get_page(x + 1)
 
     def __len__(self: Self) -> int:
