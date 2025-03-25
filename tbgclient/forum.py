@@ -208,8 +208,10 @@ class Message(UsesSession, _Indexed):
     content: str = None
     user: User | UserData = None
     icon: str | PostIcons = None
+    board_name: InitVar[str] = None
+    bid: InitVar[int] = None
 
-    def __post_init__(self: Self) -> None:
+    def __post_init__(self: Self, board_name: str, bid: int) -> None:
         if type(self.user) is dict:
             self.user = User(**self.user)
         if type(self.icon) is str:
