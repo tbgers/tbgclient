@@ -363,8 +363,10 @@ def parse_profile(document: str) -> UserData:
     basic_info = profile_view.find("div", {"id": "basicinfo"})
     # username
     username = basic_info.find("div", class_="username")
-    result["group"] = username.find("span", class_="position").text
-    result["name"] = username.contents[0]  # the username string
+    group = username.find("span", class_="position")
+    result["group"] = group.text
+    group.decompose()
+    result["name"] = username.text.strip()
     # avatar
     avatar = basic_info.find("img", class_="avatar")
     if avatar is not None:
@@ -402,14 +404,16 @@ def parse_profile(document: str) -> UserData:
     result["social"] = {}
     for dt, dd in detailed_dict.items():
         key = dt.text.strip()
-        if key in mapping and mapping[key] is not None:
-            result[mapping[key]] = dd.text
+        if key in mapping:
+            if mapping[key] is not None:
+                result[mapping[key]] = dd.text
         else:
             result["social"][key[:-1]] = dd.text
+    result["posts"] = parse_integer(result["posts"].split()[0])
     # signature
     signature = profile_view.find("div", class_="signature")
     signature_title = signature.find("h5", text="Signature:")
     signature_title.decompose()
-    result["signature"] = signature
+    result["signature"] = str(signature)
 
     return result
