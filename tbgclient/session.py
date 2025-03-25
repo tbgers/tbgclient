@@ -203,3 +203,8 @@ class SessionContext(Generic[UsingSession]):
 
     def __repr__(self: Self) -> str:
         return f"<SessionContext of {self.session} for {self.value}>"
+
+    # NOTE: Some functionality of Python (like for loops) requires these
+    # functions to be explicitly written. (perhaps from attribute tests)
+    def __iter__(self: Self) -> Any:
+        return self.__getattr__("__iter__")()
