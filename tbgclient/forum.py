@@ -135,6 +135,8 @@ class User(UsesSession, _Indexed):
         )
         forum_parser.check_errors(res.text, res)
         parsed = forum_parser.parse_profile(res.text)
+        # The parsed dictionary doesn't include the uid
+        parsed["uid"] = self.uid
         self.__init__(**parsed)
         return self
 
