@@ -253,7 +253,7 @@ def parse_search_item(msg: BeautifulSoup) -> MessageData:
     # board
     board_name = board_link.text
     board_link = urlparse(board_link.get("href"))
-    fid = parse_qs(board_link.query)["board"][0].split(".")[0]
+    bid = parse_qs(board_link.query)["board"][0].split(".")[0]
     # topic
     subject = topic_link.get("title")
     topic_link = urlparse(topic_link.get("href"))
@@ -274,7 +274,7 @@ def parse_search_item(msg: BeautifulSoup) -> MessageData:
 
     return {
         "board_name": board_name,
-        "fid": int(fid),
+        "bid": int(bid),
         "subject": subject,
         "tid": int(tid),
         "mid": mid,
