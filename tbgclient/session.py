@@ -137,6 +137,15 @@ class Session:
         from .forum import Topic
         return Topic(tid=tid).using(self).update(method=method)
 
+    def __repr__(self: Self) -> str:
+        return (
+            # HACK: Need to avoid recursion loops!
+            "<Session of User"
+            f"(name={self.user.name!r}, uid={self.user.uid!r})>"
+            if self.user is not None
+            else "<Session of Guest>"
+        )
+
 
 class UsesSession:
     """A mixin for those that uses a session.
