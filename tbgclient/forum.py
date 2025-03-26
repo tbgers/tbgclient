@@ -130,7 +130,7 @@ class User(UsesSession, _Indexed):
     gender: str = None
 
     def update_get(self: Self) -> Self:
-        """GET this message on the specified :py:ivar:`mid`."""
+        """GET this user on the specified :py:ivar:`uid`."""
         check_fields(self, "uid")
         res = api.do_action(
             self.session,
