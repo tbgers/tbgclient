@@ -61,6 +61,7 @@ class Session:
     """
     session: requests.Session
     cookies: RequestsCookieJar
+    user: "tbgclient.forum.User"
 
     def __init__(self: Self, get_sess_id: bool = False) -> None:
         self.session = requests.Session()
@@ -75,8 +76,16 @@ class Session:
         :param username: The username.
         :param password: The password.
         """
+        import re
+        from urllib.parse import urlparse
+        from .forum import User
         res = api.login(self, username, password)
         self.cookies.update(res.cookies)
+        # Get the user's ID.
+        # Conveinently, SMF already included it on the query string =)
+        url = urlparse(res.headers["location"])
+        uid = re.search(r'member=(\d+)', url.query)
+        self.user = User(uid=int(uid[1])).using(self)
 
     def request(self: Self, *args: Any, **kwargs: Any) -> requests.Response:
         """Do a request using this Session's cookie jar."""
