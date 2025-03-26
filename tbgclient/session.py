@@ -205,6 +205,9 @@ class SessionContext(Generic[UsingSession]):
             # if `attr` is not callable, return it as it is
             return attr
 
+    def __setattr__(self: Self, name: str, value: Any) -> Any:
+        return self.value.__setattr__(name, value)
+
     def using(self: Self, session: Session) -> "SessionContext":
         """Create a new :py:class:`SessionContext` using the specified
         session."""
