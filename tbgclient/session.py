@@ -66,6 +66,7 @@ class Session:
     def __init__(self: Self, get_sess_id: bool = False) -> None:
         self.session = requests.Session()
         self.cookies = RequestsCookieJar()
+        self.user = None
         if get_sess_id:
             # Get the PHPSESSID token.
             self.request("GET", api.FORUM_URL, allow_redirects=False)
@@ -175,10 +176,11 @@ class SessionContext(Generic[UsingSession]):
     value: UsingSession
 
     def __init__(self: Self, session: Session, value: UsingSession) -> None:
-        self.session = session
+        # We assigned __setattr__, so we have to use object's
+        object.__setattr__(self, "session", session)
         if UsesSession not in type(value).__bases__:
             raise ValueError("Only values that uses sessions can be used")
-        self.value = value
+        object.__setattr__(self, "value", value)
 
     def __getattr__(self: Self, name: str) -> Any:
         attr = getattr(self.value, name)
