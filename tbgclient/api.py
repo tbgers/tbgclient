@@ -3,6 +3,7 @@ Contains functions to communicate with the TBG server.
 """
 
 import requests
+from datetime import date, datetime
 from .exceptions import RequestError
 import urllib.parse
 from .parsers import forum as forum_parser
@@ -210,6 +211,98 @@ def edit_message(session: Session, mid: int, tid: int,
         },
         cookies=topic_res.cookies,
         allow_redirects=False,  # the redirect doesn't set any cookie
+    )
+    return res
+
+
+def edit_profile(session: Session, uid: int, avatar: str | None = None,
+                 blurb: str = "",
+                 birthday: date | datetime | None = None,
+                 signature: str = "", website_title: str = "",
+                 website_url: str = "", custom_fields: dict[str, Any] = {},
+                 **kwargs) -> requests.Response:
+    """Edits a reply to the specified message ID on a topic ID.
+    (Yes, the topic ID is required!)
+
+    :param session: The session used.
+    :type session: requests.Session
+    :param mid: The message ID.
+    :type mid: int
+    :param tid: The topic ID.
+    :type tid: int
+    :param message: The message content.
+    :type message: str
+    :param subject: The message subject.
+    :type subject: str
+    :param icon: The message icon.
+    :type icon: str | PostIcons
+    :param reason: The reason for the edit.
+    :type reason: str
+    :return: The response.
+    :rtype: requests.Response
+    """
+    # first we get the nonce values (and other hidden inputs I guess)
+    profile_res = do_action(session, "profile",
+                            params={"area": "forumprofile"},
+                            no_percents=True,
+                            **kwargs)
+    nonce = forum_parser.get_hidden_inputs(profile_res.text)
+    # we didn't store the user's birthday,
+    # so we'll leave it unchanged by default
+    if birthday is None:
+        import re
+        day = re.search(r'<input .*name="bday1".*value="(\d+)".*>',
+                        profile_res.text
+                        )
+        if day is None:
+            day = ""
+        else:
+            day = day[1]
+        month = re.search(r'<input .*name="bday2".*value="(\d+)".*>',
+                          profile_res.text
+                          )
+        if month is None:
+            month = ""
+        else:
+            month = month[1]
+        year = re.search(r'<input .*name="bday3".*value="(\d+)".*>',
+                         profile_res.text
+                         )
+        if year is None:
+            year = ""
+        else:
+            year = year[1]
+    else:
+        day = birthday.day
+        month = birthday.month
+        year = birthday.year
+
+    # then we post the reply
+    res = do_action(
+        session,
+        "profile",
+        method="POST",
+        params={"area": "forumprofile", "u": str(uid)},
+        data={
+            "avatar_choice": "none" if avatar is None else "external",
+            "userpicpersonal": str(avatar),
+            "personal_text": blurb,
+            "bday1": str(day),
+            "bday2": str(month),
+            "bday3": str(year),
+            "signature": signature,
+            "website_title": website_title,
+            "website_url": website_url,
+            "save": "Change profile",
+            **{
+                f"customfield[{k}]": str(v)
+                for k, v in custom_fields.items()
+            },
+            **nonce,
+        },
+        cookies=profile_res.cookies,
+        allow_redirects=False,  # the redirect doesn't set any cookie
+        no_percents=True,
     )
     return res
 
