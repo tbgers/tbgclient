@@ -16,6 +16,7 @@ from warnings import warn
 from collections.abc import Iterator
 import zlib
 import base64
+from datetime import datetime, date
 
 T = TypeVar("T")
 
@@ -129,6 +130,8 @@ class User(UsesSession, _Indexed):
     website: str = None
     gender: str = None
 
+    default_submit_method: ClassVar[str] = "profile"
+
     def update_get(self: Self) -> Self:
         """GET this user on the specified :py:ivar:`uid`."""
         check_fields(self, "uid")
@@ -143,6 +146,70 @@ class User(UsesSession, _Indexed):
         # The parsed dictionary doesn't include the uid
         parsed["uid"] = self.uid
         self.__init__(**parsed)
+        return self
+
+    def submit_profile(self: Self,
+                       birthday: datetime | date | None = None) -> Self:
+        """Update this user's profile.
+
+        .. warning::
+
+            Keep in mind that the :py:attr:`signature` attribute is expecting
+            a BBC value, not the HTML string that :py:func:`update_get`
+            returns. If you just updated this object using that function, this
+            *will* be escaped by SMF, which may be undesirable.
+
+            To avoid this, make sure you update the signature, or just blank
+            it out.
+
+            .. code-block:: python
+
+                user.update()
+                user.signature = "something"
+                user.submit()
+
+        :param birthday: The birthday of this user. If `None`, leave it
+                         unchanged.
+        """
+        check_fields(self, "uid")
+        gender_idx = {
+            "none": 0,
+            "male": 1,
+            "female": 2,
+            "non-binary": 3,
+        }
+        social_idx = {
+            "jabber": "cust_jabber",
+            "msn messenger": "cust_msn",
+            "aol im": "cust_aolim",
+            "yahoo! messenger": "cust_yahoo"
+        }
+        res = api.edit_profile(
+            self.session,
+            self.uid,
+            self.avatar,
+            self.blurb,
+            None,
+            self.signature,
+            # We didn't store the website title
+            self.website,
+            self.website,
+            {
+                "cust_real": self.real_name,
+                "cust_loca": self.location,
+                **{
+                    social: ""
+                    for social in social_idx.values()
+                },
+                **{
+                    social_idx[k.lower()]: v
+                    for k, v in self.social.items()
+                    if k.lower in social_idx
+                },
+                "cust_gender": gender_idx[str(self.gender).lower()]
+            },
+        )
+        forum_parser.check_errors(res.text, res)
         return self
 
 
