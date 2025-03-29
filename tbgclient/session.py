@@ -113,30 +113,6 @@ class Session:
         global default_session
         default_session = self
 
-    def get_message(self: Self, mid: int, method: str = "get"
-                    ) -> "SessionContext[tbgclient.forum.Message]":
-        """Gets a message with the specified message ID.
-
-        The result is wrapped in a :py:class:`SessionContext`.
-        :param mid: The message ID.
-        :param method: The method to use. See
-                       :py:class:`tbgclient.forum.Message`.
-        """
-        from .forum import Message
-        return Message(mid=mid).using(self).update(method=method)
-
-    def get_topic(self: Self, tid: int, method: str = "get"
-                  ) -> "SessionContext[tbgclient.forum.Topic]":
-        """Gets a topic with the specified topic ID.
-
-        The result is wrapped in a :py:class:`SessionContext`.
-        :param tid: The topic ID.
-        :param method: The method to use. See
-                       :py:class:`tbgclient.forum.Topic`.
-        """
-        from .forum import Topic
-        return Topic(tid=tid).using(self).update(method=method)
-
     def __repr__(self: Self) -> str:
         return (
             # HACK: Need to avoid recursion loops!
