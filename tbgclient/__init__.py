@@ -35,6 +35,25 @@ def get_topic(tid: int, method: str = "get") -> Topic:
     return Topic(tid=tid).update(method=method)
 
 
+def post_message(tid: int, subject: str, content: str, method: str = "post",
+                 **kwargs) -> Message:
+    """Post a message with the specified topic ID.
+    For other keyword arguments, see :py:class:`tbgclient.forum.Message`.
+
+    :param tid: The destination topic ID.
+    :param subject: The subject of the message.
+    :param content: The content of the message.
+    :param method: The method to use. See
+                   :py:class:`tbgclient.forum.Message`."""
+    return (
+        Message(tid, subject=subject, content=content, **kwargs)
+        .submit(method=method)
+    )
+
+
+search = Search
+
+
 __all__ = [
     "api", "exceptions", "Message", "Topic", "User", "Page", "Session",
     "Smilies", "PostIcons", "UserGroup", "Search"
