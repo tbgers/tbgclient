@@ -477,7 +477,7 @@ def parse_page(document: str, page_parser: Callable[[BeautifulSoup],
         for x in pagelinks.contents if parse_integer(x.text) is not None
     ]
     current_page = int(pagelinks.find("span", {"class": "current_page"}).text)
-    total_pages = parse_integer(pages1].text)
+    total_pages = parse_integer(pages[-1].text)
     # get content
     content = page_parser(content_section, hierarchy)
 
