@@ -327,11 +327,11 @@ def parse_alerts_content(
     """
     patterns = {
         # tuple(re.split(r"(?={)|(?<=})|^|$", '...')[1:-1])
-        "msg_quote": ('{member_link}', ' quoted you in ', '{msg_msg}'),
-        "msg_mention": ('{member_link}', ' mentioned you in ', '{msg_msg}'),
+        "msg_quote": ('{user}', ' quoted you in ', '{msg}'),
+        "msg_mention": ('{user}', ' mentioned you in ', '{msg}'),
         "board_topic": (
-            '{member_link}', ' started a new topic, ',
-            '{topic_msg}', ', in ', '{board_msg}'
+            '{user}', ' started a new topic, ',
+            '{topic}', ', in ', '{board}'
         ),  # Is this ever a thing?
     }
 
@@ -380,17 +380,17 @@ def parse_alerts_content(
 
     group_parser = {
         "msg_quote": {
-            "member_link": parse_user_link,
-            "msg_msg": parse_message_link,
+            "user": parse_user_link,
+            "msg": parse_message_link,
         },
         "msg_mention": {
-            "member_link": parse_user_link,
-            "msg_msg": parse_message_link,
+            "user": parse_user_link,
+            "msg": parse_message_link,
         },
         "board_topic": {
-            "member_link": parse_user_link,
-            "topic_msg": parse_message_link,
-            "board_msg": parse_board_link,
+            "user": parse_user_link,
+            "topic": parse_message_link,
+            "board": parse_board_link,
         },
     }
 
@@ -472,12 +472,18 @@ def parse_page(document: str, page_parser: Callable[[BeautifulSoup],
     # get current page
     content_section = elm.find("div", {"id": "content_section"})
     pagelinks = content_section.find("div", {"class": re.compile("pagelinks")})
-    pages = [
-        x
-        for x in pagelinks.contents if parse_integer(x.text) is not None
-    ]
-    current_page = int(pagelinks.find("span", {"class": "current_page"}).text)
-    total_pages = parse_integer(pages[-1].text)
+    if pagelinks is None:  # can't find 'em!
+        current_page = 0
+        total_pages = 0
+    else:
+        pages = [
+            x
+            for x in pagelinks.contents if parse_integer(x.text) is not None
+        ]
+        current_page = int(
+            pagelinks.find("span", {"class": "current_page"}).text
+        )
+        total_pages = parse_integer(pages[-1].text)
     # get content
     content = page_parser(content_section, hierarchy)
 
