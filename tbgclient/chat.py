@@ -102,7 +102,7 @@ class ChatConnection:
 
         return res["infos"]
 
-    def messages(self: Self) -> Generator[Message]:
+    def messages(self: Self) -> Generator[Message, None, None]:
         """A generator that iterates through messages.
 
         .. note:: When the chat is polled for the first time, some past
