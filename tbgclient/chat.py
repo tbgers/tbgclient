@@ -63,11 +63,14 @@ class ChatConnection:
     last_mid = None
     users: list[User]
     """List of online users in the channel."""
+    cid: int
+    """The current channel ID of this connection."""
 
     def __init__(self: Self, session: "tbgclient.Session") -> None:
         self.session = session
         self.__buffer = {}
         self.__read_mid = None
+        self.cid = 0  # Public
 
     def poll(self: Self) -> dict[str, str]:
         """Poll the server to retrieve the recent messages.
@@ -80,7 +83,8 @@ class ChatConnection:
                 **({"lastID": self.last_mid}
                     if self.last_mid is not None
                     else {}),
-                "ajax": "true"
+                "ajax": "true",
+                "channelID": str(self.cid),
             },
         )
         res = parse_response(res.content)
@@ -94,6 +98,7 @@ class ChatConnection:
                 self.last_mid = msg["mid"]
             self.__buffer[msg["mid"]] = Message(**msg)
         self.users = [User(data) for data in res["users"]]
+        self.cid = res["infos"].get("channelID", self.cid)
 
         return res["infos"]
 
@@ -128,4 +133,7 @@ class ChatConnection:
             data={"lastID": self.last_mid, "text": message},
             params={"ajax": "true"},
         )
+        res = parse_response(res.content)
+        self.cid = res["infos"].get("channelID", self.cid)
+
         return res
