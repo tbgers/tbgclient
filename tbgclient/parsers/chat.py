@@ -17,28 +17,30 @@ def parse_response(response: str) -> ResponseData:
 
     # Parse the online users list.
     users = []
-    for user in document.find("users").children:
-        users.append({
-            "uid": int(user["userID"]),
-            "group": user["userRole"],
-            "name": user.contents[0],
-        })
+    if (elm := document.find("users")) is not None:
+        for user in elm.children:
+            users.append({
+                "uid": int(user["userID"]),
+                "group": user["userRole"],
+                "name": user.contents[0],
+            })
 
     # Parse the messages.
     messages = []
-    for message in document.find("messages").children:
-        username, text = message.contents
-        messages.append({
-            "mid": int(message["id"]),
-            "date": parse_date(message["dateTime"]),
-            "user": {
-                "uid": int(message["userID"]),
-                "group": message["userRole"],
-                "name": username.contents[0],
-            },
-            "cid": int(message["channelID"]),
-            "content": text.contents[0]
-        })
+    if (elm := document.find("messages")) is not None:
+        for message in elm.children:
+            username, text = message.contents
+            messages.append({
+                "mid": int(message["id"]),
+                "date": parse_date(message["dateTime"]),
+                "user": {
+                    "uid": int(message["userID"]),
+                    "group": message["userRole"],
+                    "name": username.contents[0],
+                },
+                "cid": int(message["channelID"]),
+                "content": text.contents[0]
+            })
 
     return {
         "infos": infos,
