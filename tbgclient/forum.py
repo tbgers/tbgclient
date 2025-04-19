@@ -449,7 +449,7 @@ class Alert:
     that represents every alert cases."""
     @dataclass(frozen=True)
     class Case:
-        """Shared attributes and functions for each """
+        """Shared attributes and functions for each case."""
         date: datetime
         aid: int
 
@@ -458,7 +458,7 @@ class Alert:
                 if isinstance(annotation, InitVar):
                     continue
                 attr = getattr(self, name)
-                object.__setattr__(self, name, annotation(attr))
+                object.__setattr__(self, name, annotation(**attr))
 
     @dataclass(frozen=True)
     class Quoted(Case):
@@ -476,7 +476,7 @@ class Alert:
     class NewTopic(Case):
         """Someone made a new topic in a board."""
         user: User
-        msg: Message
+        topic: Topic
         board: InitVar[Any]  # currently unused
 
         def __post_init__(self, board):
