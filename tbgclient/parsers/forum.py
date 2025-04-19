@@ -1,6 +1,6 @@
 from bs4 import BeautifulSoup, NavigableString
 from tbgclient.protocols.forum import (
-    MessageData, PageData, UserData, AlertData, BoardData
+    MessageData, PageData, UserData, AlertData, BoardData, TopicData
 )
 from tbgclient.exceptions import RequestError
 import re
@@ -354,19 +354,25 @@ def parse_alerts_content(
             "uid": int(uid[0])
         }
 
-    def parse_message_link(link: BeautifulSoup) -> MessageData:
-        """From a message link element, turn it into a MessageData."""
-        subject = link.get("title")
+    def parse_topic_link(link: BeautifulSoup) -> TopicData:
+        """From a message link element, turn it into a TopicData."""
+
         topic_link = urlparse(link.get("href"))
         tid = parse_qs(topic_link.query)["topic"][0].split(".")[0]
-        if topic_link.fragment is not None:
-            mid = int(topic_link.fragment[3:])
-        else:
-            mid = None
+        return {
+            "tid": int(tid),
+        }
+
+    def parse_message_link(link: BeautifulSoup) -> MessageData:
+        """From a message link element, turn it into a MessageData."""
+        topic_data = parse_topic_link(link)
+        msg_link = urlparse(link.get("href"))
+        subject = link.get("title")
+        mid = int(msg_link.fragment[3:])
         return {
             "subject": subject,
-            "tid": int(tid),
             "mid": mid,
+            **topic_data,
         }
 
     def parse_board_link(link: BeautifulSoup) -> BoardData:
@@ -389,7 +395,7 @@ def parse_alerts_content(
         },
         "board_topic": {
             "user": parse_user_link,
-            "topic": parse_message_link,
+            "topic": parse_topic_link,
             "board": parse_board_link,
         },
     }
