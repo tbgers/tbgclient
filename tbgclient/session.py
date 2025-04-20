@@ -8,7 +8,12 @@ from . import api
 from asyncio import current_task, Task
 from threading import current_thread, Thread
 from multiprocessing import current_process
-from typing import Optional, Union, Any, Self, TypeVar, Generic, TYPE_CHECKING
+from typing import Optional, Union, Any, TypeVar, Generic, TYPE_CHECKING
+try:
+    # PORT: 3.10 and below doesn't have typing.Self
+    from typing import Self
+except ImportError:
+    from typing_extensions import Self
 if TYPE_CHECKING:
     import tbgclient
 
@@ -23,15 +28,21 @@ default_session: Optional["Session"] = None
 T = TypeVar("T")
 
 
-def get_context() -> tuple[Union[Task, ..., None], Thread, "BaseProcess"]:
+class MISSING:
+    """An internal sentinel value for non-asynchronous contexts,
+    of which py:func:`asyncio.current_task()` will raise an error for the lack
+    of a running event loop."""
+
+
+def get_context() -> tuple[Union[Task, MISSING, None], Thread, "BaseProcess"]:
     """Get the current context.
     :rtype: (Task | ... | None, Thread, Process)
     """
-    task: Union[Task, ..., None]
+    task: Union[Task, MISSING, None]
     try:
         task = current_task()
     except RuntimeError:
-        task = ...  # to distinguish it with None
+        task = MISSING()
     thread = current_thread()
     process = current_process()
     return task, thread, process

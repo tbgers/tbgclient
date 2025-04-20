@@ -11,7 +11,12 @@ from .exceptions import RequestError, IncompleteError
 from . import api
 from .parsers import forum as forum_parser
 from dataclasses import dataclass, InitVar, fields, field
-from typing import TypeVar, Generic, Self, ClassVar
+from typing import TypeVar, Generic, ClassVar
+try:
+    # PORT: 3.10 and below doesn't have typing.Self
+    from typing import Self
+except ImportError:
+    from typing_extensions import Self
 from warnings import warn
 from collections.abc import Iterator
 import zlib
@@ -248,7 +253,7 @@ class Topic(Paged, UsesSession, _Indexed):
             forum_parser.parse_topic_content
         )
         if page != parsed["current_page"]:
-            warn(f"Expected page {page}, got page {parsed["current_page"]}")
+            warn(f"Expected page {page}, got page {parsed['current_page']}")
         # just in case update_get() hasn't been called
         last_item = parsed["hierarchy"][-1]
         last_name, _last_url = last_item

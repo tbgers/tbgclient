@@ -4,7 +4,7 @@ from tbgclient.exceptions import RequestError
 import re
 from typing import TypeVar, Callable
 from requests import Response
-from datetime import datetime, UTC
+from datetime import datetime, timezone
 from urllib.parse import urlparse, parse_qs
 from functools import reduce
 
@@ -364,7 +364,7 @@ def parse_quotefast(document: str) -> MessageData:
     if edit_time == 0:
         edit_time = None
     else:
-        edit_time = datetime.fromtimestamp(edit_time, UTC)
+        edit_time = datetime.fromtimestamp(edit_time, timezone.utc)
 
     return {
         "subject": subject.text,

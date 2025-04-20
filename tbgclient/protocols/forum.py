@@ -2,13 +2,24 @@
 Protocols that signifies parts of a forum.
 """
 
-from typing import TypeVar, TypedDict, Generic, Self
+from typing import TypeVar, TypedDict, Generic
+try:
+    # PORT: 3.10 and below doesn't have typing.Self
+    from typing import Self
+except ImportError:
+    from typing_extensions import Self
 from enum import Enum
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
 from datetime import datetime
 
 T = TypeVar('T')
+try:
+    # PORT: Until 3.11, you cannot create a class that
+    # inherits TypedDict and Generic
+    type("_inherit_test", (TypedDict, Generic[T]), {})
+except TypeError:
+    from typing_extensions import TypedDict
 
 
 class Indexed(ABC):
