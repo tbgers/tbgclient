@@ -424,7 +424,7 @@ def parse_alerts_content(
             else:  # no break: we have a match!
                 break
         else:  # no break: no patterns match
-            matched = {"type": "unknown", "values": {"element": alert_text}}
+            matched = {"type": "unknown", "values": {"data": alert_text}}
             warn(
                 f"Cannot parse alert {alert_text}\n"
                 "Please make an issue and send a sample of this alert."

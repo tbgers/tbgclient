@@ -485,7 +485,7 @@ class Alert:
     @dataclass(frozen=True)
     class Unknown(Case):
         """An alert that cannot be identified their type at this moment."""
-        element: Any
+        data: Any
 
     def __new__(cls, type, values, aid, date):
         cases = {
