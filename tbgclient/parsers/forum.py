@@ -361,11 +361,16 @@ def parse_alerts_content(
         tid = parse_qs(topic_link.query)["topic"][0].split(".")[0]
         return {
             "tid": int(tid),
+            "topic_name": link.text
         }
 
     def parse_message_link(link: BeautifulSoup) -> MessageData:
         """From a message link element, turn it into a MessageData."""
         topic_data = parse_topic_link(link)
+        # The text of the link is parsed as topic_name
+        # In messages, these are for subjects
+        topic_data["subject"] = topic_data["topic_name"]
+        del topic_data["topic_name"]
         msg_link = urlparse(link.get("href"))
         subject = link.get("title")
         mid = int(msg_link.fragment[3:])
