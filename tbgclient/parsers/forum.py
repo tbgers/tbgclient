@@ -409,13 +409,11 @@ def parse_alerts_content(
         alert_text = alert_text.find("div")
         # the element has trailing and leading spaces for some reason
         # completely unacceptable
-        print(alert_text.contents)
         for pat_name, pat in patterns.items():
             if len(pat) != len(alert_text.contents):
                 continue
             matched = {"type": pat_name, "values": {}}
             for rule, elm in zip(pat, alert_text.children):
-                print(rule, elm)
                 if rule.startswith("{") and rule.endswith("}"):
                     name = rule[1:-1]
                     matched["values"][name] = group_parser[pat_name][name](elm)
