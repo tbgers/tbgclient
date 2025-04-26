@@ -82,7 +82,6 @@ def check_errors(document: str, response: Response) -> None:
     if errors is not None:
         errors_dt = errors.contents[1].contents[1].text
         errors_dd = errors.contents[1].contents[3]
-        print(repr(errors_dt.strip()))
         raise RequestError(
             f"{errors_dt.strip()}\n"
             + "\n".join(str(string).strip()
@@ -344,7 +343,6 @@ def parse_alerts_content(
         # Older version of Python may seperate ; as well as &
         # (meaning user_query will have "u")
         # This is no longer the case since 3.10
-        print(link)
         if "u" in user_query:
             uid = user_query["u"]
         else:
