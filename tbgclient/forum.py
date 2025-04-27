@@ -17,6 +17,7 @@ from collections.abc import Iterator
 import zlib
 import base64
 from datetime import datetime, date
+from itertools import count
 
 T = TypeVar("T")
 
@@ -442,7 +443,7 @@ class Search(UsesSession, Paged):
             return None
 
 
-class Alert:
+class Alert(UsesSession):
     """Classes representing an alert.
 
     This class doesn't create an instance of itself, but instead subclasses
@@ -495,3 +496,28 @@ class Alert:
             "unknown": cls.Unknown
         }
         return cases[type](**values, aid=aid, date=date)
+
+    # IDEA: maybe make another object just for this?
+    @classmethod
+    def get_page(cls, page=1):
+        """Gets a page of alerts."""
+        session = cls.session.fget(cls)
+        res = api.do_action(
+            session, "profile",
+            params={"area": "showalerts"},
+            no_percents=True
+        )
+        parsed = forum_parser.parse_page(
+            res.content,
+            forum_parser.parse_alerts_content
+        )
+        return Page(**parsed, content_type=Alert)
+
+    @classmethod
+    def pages(cls):
+        """Returns a generator that gets pages of alerts."""
+        for i in count(1):
+            page = cls.get_page(i)
+            yield page
+            if page.current_page == page.total_pages:
+                break
