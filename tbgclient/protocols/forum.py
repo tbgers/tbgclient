@@ -2,7 +2,7 @@
 Protocols that signifies parts of a forum.
 """
 
-from typing import TypeVar, TypedDict, Generic
+from typing import TypeVar, TypedDict, Generic, Any
 try:
     # PORT: 3.10 and below doesn't have typing.Self
     from typing import Self
@@ -241,3 +241,16 @@ class MessageData(TopicData, total=False):
     """The poster of the message."""
     icon: str | PostIcons
     """The icon used in the message. Usually this is invisible."""
+
+
+class AlertData(TypedDict, total=False):
+    """A type that contains information about a message."""
+
+    aid: int
+    """The ID of this number."""
+    date: str | datetime
+    """The date when this alert was made."""
+    type: str
+    """The type of the alert."""
+    values: dict[str, Any]
+    """The values of this alert."""

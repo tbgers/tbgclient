@@ -1,12 +1,15 @@
 from bs4 import BeautifulSoup, NavigableString
-from tbgclient.protocols.forum import MessageData, PageData, UserData
+from tbgclient.protocols.forum import (
+    MessageData, PageData, UserData, AlertData, BoardData, TopicData
+)
 from tbgclient.exceptions import RequestError
 import re
 from typing import TypeVar, Callable
 from requests import Response
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from urllib.parse import urlparse, parse_qs
 from functools import reduce
+from warnings import warn
 
 T = TypeVar('T')
 date_format = "%b %d, %Y, %I:%M:%S %p"
@@ -79,7 +82,6 @@ def check_errors(document: str, response: Response) -> None:
     if errors is not None:
         errors_dt = errors.contents[1].contents[1].text
         errors_dd = errors.contents[1].contents[3]
-        print(repr(errors_dt.strip()))
         raise RequestError(
             f"{errors_dt.strip()}\n"
             + "\n".join(str(string).strip()
@@ -310,6 +312,153 @@ def parse_search_content(
     return [parse_search_item(item) for item in items]
 
 
+def parse_alerts_content(
+    content: BeautifulSoup,
+    hierarchy: list[tuple[str, str]]
+) -> list[AlertData]:
+    """Parse ``#content_section`` of an alert page.
+    This is meant to be used with :py:func:`parse_page`.
+
+    :param content: The ``#content_section`` element of the page.
+    :type content: BeautifulSoup
+    :return: A list of alerts.
+    :rtype: list[MessageData]
+    """
+    patterns = {
+        # tuple(re.split(r"(?={)|(?<=})|^|$", '...')[1:-1])
+        "msg_quote": ('{user}', ' quoted you in ', '{msg}'),
+        "msg_mention": ('{user}', ' mentioned you in ', '{msg}'),
+        "board_topic": (
+            '{user}', ' started a new topic, ',
+            '{topic}', ', in ', '{board}'
+        ),  # Is this ever a thing?
+    }
+
+    def parse_user_link(link: BeautifulSoup) -> UserData:
+        """From a user link element, turn it into a UserData."""
+        username = link.text
+        user_url = urlparse(link.get("href"))
+        user_query = parse_qs(user_url.query)
+        # Note the version difference:
+        # Older version of Python may seperate ; as well as &
+        # (meaning user_query will have "u")
+        # This is no longer the case since 3.10
+        if "u" in user_query:
+            uid = user_query["u"]
+        else:
+            uid = parse_qs(user_url.query, separator=";")["u"]
+        return {
+            "name": username,
+            "uid": int(uid[0])
+        }
+
+    def parse_topic_link(link: BeautifulSoup) -> TopicData:
+        """From a message link element, turn it into a TopicData."""
+
+        topic_link = urlparse(link.get("href"))
+        tid = parse_qs(topic_link.query)["topic"][0].split(".")[0]
+        return {
+            "tid": int(tid),
+            "topic_name": link.text
+        }
+
+    def parse_message_link(link: BeautifulSoup) -> MessageData:
+        """From a message link element, turn it into a MessageData."""
+        topic_data = parse_topic_link(link)
+        # The text of the link is parsed as topic_name
+        # In messages, these are for subjects
+        topic_data["subject"] = topic_data["topic_name"]
+        del topic_data["topic_name"]
+        msg_link = urlparse(link.get("href"))
+        subject = link.get("title")
+        mid = int(msg_link.fragment[3:])
+        return {
+            "subject": subject,
+            "mid": mid,
+            **topic_data,
+        }
+
+    def parse_board_link(link: BeautifulSoup) -> BoardData:
+        board_name = link.text
+        board_link = urlparse(link.get("href"))
+        bid = parse_qs(board_link.query)["board"][0].split(".")[0]
+        return {
+            "board_name": board_name,
+            "bid": int(bid),
+        }
+
+    group_parser = {
+        "msg_quote": {
+            "user": parse_user_link,
+            "msg": parse_message_link,
+        },
+        "msg_mention": {
+            "user": parse_user_link,
+            "msg": parse_message_link,
+        },
+        "board_topic": {
+            "user": parse_user_link,
+            "topic": parse_topic_link,
+            "board": parse_board_link,
+        },
+    }
+
+    # Parse the alert text
+    table = content.find("table", {"id": "alerts"})
+    # print(table)
+    result = []
+    for row in table.find_all("tr"):
+        alert_text = row.find("td", {"class": "alert_text"})
+        alert_text = alert_text.find("div")
+        # the element has trailing and leading spaces for some reason
+        # completely unacceptable
+        for pat_name, pat in patterns.items():
+            if len(pat) != len(alert_text.contents):
+                continue
+            matched = {"type": pat_name, "values": {}}
+            for rule, elm in zip(pat, alert_text.children):
+                if rule.startswith("{") and rule.endswith("}"):
+                    name = rule[1:-1]
+                    matched["values"][name] = group_parser[pat_name][name](elm)
+                elif rule != elm:
+                    break  # not a match
+            else:  # no break: we have a match!
+                break
+        else:  # no break: no patterns match
+            matched = {"type": "unknown", "values": {"data": alert_text}}
+            warn(
+                f"Cannot parse alert {alert_text}\n"
+                "Please make an issue and send a sample of this alert."
+            )
+
+        # Attach metadata
+        # Date
+        alert_time = row.find("td", {"class": "alert_time"})
+        time = alert_time.find("time")
+        time = int(time.get("datetime"))
+        date = (
+            datetime(1970, 1, 1, 0, 0, 0, tzinfo=timezone.utc)
+            + timedelta(seconds=time)
+        )
+        # Alert ID
+        alert_buttons = row.find("td", {"class": "alert_buttons"})
+        button_url = urlparse(alert_buttons.find("a").get("href"))
+        # This would be the delete button
+        button_query = parse_qs(button_url.query)
+        if "aid" in button_query:
+            aid = button_query["aid"]
+        else:
+            aid = parse_qs(button_url.query, separator=";")["aid"]
+
+        result.append({
+            **matched,
+            "date": date,
+            "aid": int(aid[0]),
+        })
+
+    return result
+
+
 def parse_page(document: str, page_parser: Callable[[BeautifulSoup],
                list[T]]) -> PageData[T]:
     """Parse a single page.
@@ -330,12 +479,18 @@ def parse_page(document: str, page_parser: Callable[[BeautifulSoup],
     # get current page
     content_section = elm.find("div", {"id": "content_section"})
     pagelinks = content_section.find("div", {"class": re.compile("pagelinks")})
-    pages = [
-        x
-        for x in pagelinks.contents if parse_integer(x.text) is not None
-    ]
-    current_page = int(pagelinks.find("span", {"class": "current_page"}).text)
-    total_pages = parse_integer(pages[-1].text)
+    if pagelinks is None:  # can't find 'em!
+        current_page = 0
+        total_pages = 0
+    else:
+        pages = [
+            x
+            for x in pagelinks.contents if parse_integer(x.text) is not None
+        ]
+        current_page = int(
+            pagelinks.find("span", {"class": "current_page"}).text
+        )
+        total_pages = parse_integer(pages[-1].text)
     # get content
     content = page_parser(content_section, hierarchy)
 

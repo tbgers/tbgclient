@@ -11,7 +11,7 @@ from .exceptions import RequestError, IncompleteError
 from . import api
 from .parsers import forum as forum_parser
 from dataclasses import dataclass, InitVar, fields, field
-from typing import TypeVar, Generic, ClassVar
+from typing import TypeVar, Generic, ClassVar, Any
 try:
     # PORT: 3.10 and below doesn't have typing.Self
     from typing import Self
@@ -22,6 +22,7 @@ from collections.abc import Iterator
 import zlib
 import base64
 from datetime import datetime, date
+from itertools import count
 
 T = TypeVar("T")
 
@@ -445,3 +446,83 @@ class Search(UsesSession, Paged):
             return self.pages
         except AttributeError:
             return None
+
+
+class Alert(UsesSession):
+    """Classes representing an alert.
+
+    This class doesn't create an instance of itself, but instead subclasses
+    that represents every alert cases."""
+    @dataclass(frozen=True)
+    class Case:
+        """Shared attributes and functions for each case."""
+        date: datetime
+        aid: int
+
+        def __post_init__(self):
+            for name, annotation in self.__annotations__.items():
+                if isinstance(annotation, InitVar):
+                    continue
+                attr = getattr(self, name)
+                object.__setattr__(self, name, annotation(**attr))
+
+    @dataclass(frozen=True)
+    class Quoted(Case):
+        """Someone quoted a message from this user."""
+        user: User
+        msg: Message
+
+    @dataclass(frozen=True)
+    class Mentioned(Case):
+        """Someone mentioned this user."""
+        user: User
+        msg: Message
+
+    @dataclass(frozen=True)
+    class NewTopic(Case):
+        """Someone made a new topic in a board."""
+        user: User
+        topic: Topic
+        board: InitVar[Any]  # currently unused
+
+        def __post_init__(self, board):
+            super().__post_init__()
+
+    @dataclass(frozen=True)
+    class Unknown(Case):
+        """An alert that cannot be identified their type at this moment."""
+        data: Any
+
+    def __new__(cls, type, values, aid, date):
+        cases = {
+            "msg_mention": cls.Mentioned,
+            "msg_quote": cls.Quoted,
+            "board_topic": cls.NewTopic,
+            "unknown": cls.Unknown
+        }
+        return cases[type](**values, aid=aid, date=date)
+
+    # IDEA: maybe make another object just for this?
+    @classmethod
+    def get_page(cls, page=1):
+        """Gets a page of alerts."""
+        session = cls.session.fget(cls)
+        res = api.do_action(
+            session, "profile",
+            params={"area": "showalerts"},
+            no_percents=True
+        )
+        parsed = forum_parser.parse_page(
+            res.content,
+            forum_parser.parse_alerts_content
+        )
+        return Page(**parsed, content_type=Alert)
+
+    @classmethod
+    def pages(cls):
+        """Returns a generator that gets pages of alerts."""
+        for i in count(1):
+            page = cls.get_page(i)
+            yield page
+            if page.current_page == page.total_pages:
+                break
