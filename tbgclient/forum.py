@@ -486,7 +486,7 @@ class Alert(UsesSession):
         date: datetime
         aid: int
 
-        def __post_init__(self):
+        def __post_init__(self: Self) -> None:
             for name, annotation in self.__annotations__.items():
                 if isinstance(annotation, InitVar):
                     continue
@@ -512,7 +512,7 @@ class Alert(UsesSession):
         topic: Topic
         board: InitVar[Any]  # currently unused
 
-        def __post_init__(self, board):
+        def __post_init__(self: Self, board: Any) -> None:
             super().__post_init__()
 
     @dataclass(frozen=True)
@@ -520,7 +520,11 @@ class Alert(UsesSession):
         """An alert that cannot be identified their type at this moment."""
         data: Any
 
-    def __new__(cls, type, values, aid, date):
+    AlertType = TypeVar('AlertType', bound=Case)
+    """Any type of alerts."""
+
+    def __new__(cls: "Alert", type: str, values: dict[str, Any],
+                aid: int, date: str | datetime) -> Any:
         cases = {
             "msg_mention": cls.Mentioned,
             "msg_quote": cls.Quoted,
@@ -531,7 +535,7 @@ class Alert(UsesSession):
 
     # IDEA: maybe make another object just for this?
     @classmethod
-    def get_page(cls, page=1):
+    def get_page(cls: "Alert", page: int = 1) -> Page[AlertType]:
         """Gets a page of alerts."""
         session = cls.session.fget(cls)
         res = api.do_action(
@@ -546,7 +550,7 @@ class Alert(UsesSession):
         return Page(**parsed, content_type=Alert)
 
     @classmethod
-    def pages(cls):
+    def pages(cls: "Alert") -> Iterator[Page[AlertType]]:
         """Returns a generator that gets pages of alerts."""
         for i in count(1):
             page = cls.get_page(i)
