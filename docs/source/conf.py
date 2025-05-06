@@ -7,14 +7,17 @@
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = 'tbgclient'
-copyright = '2023, Gilbert189'
+copyright = '2025, Gilbert189'
 author = 'Gilbert189'
-release = '0.4.0a4'
+release = '0.5.1a0'
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
-extensions = []
+extensions = [
+    'sphinx.ext.autodoc',
+    'sphinx.ext.autosummary',
+]
 
 templates_path = ['_templates']
 exclude_patterns = []

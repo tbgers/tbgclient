@@ -18,6 +18,7 @@ Session().make_default()
 
 def get_message(mid: int, method: str = "get") -> Message:
     """Gets a message with the specified message ID.
+
     :param mid: The message ID.
     :param method: The method to use. See
                    :py:class:`tbgclient.forum.Message`.
@@ -27,6 +28,7 @@ def get_message(mid: int, method: str = "get") -> Message:
 
 def get_topic(tid: int, method: str = "get") -> Topic:
     """Gets a topic with the specified topic ID.
+
     :param tid: The topic ID.
     :param method: The method to use. See
                    :py:class:`tbgclient.forum.Topic`.

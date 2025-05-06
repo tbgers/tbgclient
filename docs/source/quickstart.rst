@@ -4,7 +4,11 @@ Quick start
 
 This guides assumes you know how to use Python. If you haven't, have look at the `Python tutorial`_ first.
 
+It's recommended to learn the language first before you use libraries like ``tbgclient``. This `Scratch
+project`_ explains why doing the opposite is a bad idea.
+
 .. _Python tutorial: https://docs.python.org/3/tutorial/
+.. _Scratch project: https://scratch.mit.edu/projects/842407135/
 
 
 .. _get-message: 
@@ -18,7 +22,7 @@ Retrieving messages can be done by the ``Message.update_get`` function.
     from tbgclient import Message
     msg = Message().update_get(mid=152062)
 
-If you have a :ref:`session` defined, you can use the convenient :py:func:`~tbgclient.Session.get_message()` function.
+If you have a session defined, you can use the convenient :py:func:`~tbgclient.Session.get_message()` function.
 This will also wrap the object in a session context.
 
 .. code-block:: python
@@ -49,14 +53,14 @@ There are two ways to specify which session to use. One uses the ``with`` statem
     with session1:
         Message(content="Hello, world!").submit_post(tid=170)
 
-Another is to make a session context. Session objects already wrap objects they make on it, but you can wrap them yourselves:
+Another is to make a session context, using the :py:func:`~tbgclient.session.UsesSession.using()` function.
 
 .. code-block:: python
 
-    msg = session1.get_message(mid=152062)  # This returns a session context, containing the message
     (
         Message(content="Hello, world!")
-        .using(session2)  # This function wraps the message in a session context
+        # This function wraps the message in a session context
+        .using(session2)  
         .submit_post(tid=170)
     )
 
@@ -68,8 +72,8 @@ Default session
 When no session is specified, whether by the ``with`` statement or by a session context, the default session is used instead.
 This session has no authentication data; it is equivalent to a logged-out user. 
 
-The default session is stored at ``tbgclient.session.default_session``, though it is recommended to replace it with the 
-:py:class:`~tbgclient.session.Session` you made, instead of doing operations directly on the initial default session.
+The default session is stored at :py:data:`tbgclient.session.default_session`, though it is recommended to replace it with 
+the :py:class:`~tbgclient.session.Session` you made, instead of doing operations directly on the initial default session.
 
 .. code-block:: python
     

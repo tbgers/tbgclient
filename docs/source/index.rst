@@ -11,6 +11,8 @@ Welcome to tbgclient's documentation!
    :caption: Contents:
    
    qna.rst
+   quickstart.rst
+   summary/modules.rst
 
 
 
