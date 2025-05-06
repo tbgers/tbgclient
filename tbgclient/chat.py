@@ -18,8 +18,10 @@ class Message(namedtuple("_Message", [
 ])):
     """A class representing a chat message.
 
-    .. note:: This should not be confused with
-    :py:class:`tbgclient.forum.Message`."""
+    .. note::
+        This should not be confused with
+        :py:class:`tbgclient.forum.Message`.
+    """
 
     mid: int
     """The message ID."""
@@ -105,14 +107,19 @@ class ChatConnection:
     def messages(self: Self) -> Generator[Message, None, None]:
         """A generator that iterates through messages.
 
-        .. note:: When the chat is polled for the first time, some past
-        messages are put in the buffer, which may be undesired. To prevent
-        this, you can empty the buffer by calling :py:func:`clear_buffer`:
-        .. code-block:: python
-            chat.poll()
-            chat.clear_buffer()
-            while True:
-                ..."""
+        .. note::
+
+            When the chat is polled for the first time, some past
+            messages are put in the buffer, which may be undesired. To prevent
+            this, you can empty the buffer by calling :py:meth:`clear_buffer`:
+
+            .. code-block:: python
+
+                chat.poll()
+                chat.clear_buffer()
+                while True:
+                    ...
+        """
         while len(self.__buffer) > 0:
             if self.__read_mid in self.__buffer:
                 yield self.__buffer[self.__read_mid]

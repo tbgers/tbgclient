@@ -8,6 +8,11 @@ from email.utils import parsedate_to_datetime as parse_date
 
 
 def parse_response(response: str) -> ResponseData:
+    """Parse the response given by the TBGs chat server.
+
+    :param response: The response content.
+    :type response: str
+    """
     document = BeautifulSoup(response, features="xml")
 
     # Parse the info, if it exists.

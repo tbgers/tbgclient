@@ -1,5 +1,10 @@
 """
 Classes that signifies parts of a forum.
+
+Common classes here are decorated with :py:deco:`dataclasses.dataclass`,
+so any dataclass operations will work to them.
+
+.. (it also makes implementation easier hehe)
 """
 from .session import UsesSession
 from .protocols.forum import (
@@ -122,24 +127,38 @@ class Page(Generic[T]):
 @dataclass
 class User(UsesSession, _Indexed):
     """A class that represents a user."""
-    uid: int = None
-    name: str = None
-    avatar: str = None
-    group: str | UserGroup = None
-    posts: int = None
-    signature: str = None
-    email: str = None
-    blurb: str = None
-    location: str = None
-    real_name: str = None
-    social: dict[str, str] = None
-    website: str = None
-    gender: str = None
+
+    uid: int
+    """The user's ID."""
+    name: str
+    """The user's name."""
+    avatar: str
+    """The avatar/profile picture of the user."""
+    group: str | UserGroup
+    """The user's group."""
+    posts: int
+    """The total amount of posts this user has made."""
+    signature: str
+    """The signature of this user."""
+    email: str
+    """The email address of this user."""
+    blurb: str
+    """The personal text of this user."""
+    location: str
+    """The location of this user."""
+    real_name: str
+    """The real name of this user."""
+    social: dict[str, str]
+    """Other identities of this user across different social medias."""
+    website: str
+    """The website URL of this user."""
+    gender: str
+    """The gender of this user."""
 
     default_submit_method: ClassVar[str] = "profile"
 
     def update_get(self: Self) -> Self:
-        """GET this user on the specified :py:ivar:`uid`."""
+        """GET this user on the specified :py:attr:`uid`."""
         check_fields(self, "uid")
         res = api.do_action(
             self.session,
@@ -234,7 +253,7 @@ class Topic(Paged, UsesSession, _Indexed):
         self.total_pages = 0
 
     def update_get(self: Self) -> Self:
-        """GET this topic on the specified :py:ivar:`tid`."""
+        """GET this topic on the specified :py:attr:`tid`."""
         page = self.get_page()
         # Update my own fields
         last_item = page.hierarchy[-1]
@@ -266,23 +285,29 @@ class Topic(Paged, UsesSession, _Indexed):
 
 @dataclass
 class Message(UsesSession, _Indexed):
-    """A class that represents a message.
+    """A class that represents a message."""
 
-    A message (usually called a post) is the smallest unit of a forum. It
-    carries a string of text as the content of the message, consisting of
-    text, images, links, etc. It also carries other metadata like date of
-    post and the user that  posted this post.
-    """
     tid: int = None
+    """The topic ID that this message is posted on."""
     mid: int = None
+    """The message ID."""
     subject: str = None
+    """The subject of this message"""
     date: str = None
+    """When this message is posted."""
     edited: str | None = None
+    """The reason why this post is edited."""
     content: str = None
+    """The content of this message. This might be raw HTML or BBC,
+    depending on """
     user: User | UserData = None
+    """The user posting this message."""
     icon: str | PostIcons = None
+    """The category icon of this message."""
     board_name: InitVar[str] = None
+    """The board name of this message's topic."""
     bid: InitVar[int] = None
+    """The board ID of this message's topic."""
 
     def __post_init__(self: Self, board_name: str, bid: int) -> None:
         if type(self.user) is dict:
@@ -291,7 +316,7 @@ class Message(UsesSession, _Indexed):
             self.icon = PostIcons(self.icon)
 
     def submit_post(self: Self) -> Self:
-        """POST this message on the specified :py:ivar:`tid`."""
+        """POST this message on the specified :py:attr:`tid`."""
         check_fields(self, "tid")
         res = api.post_message(
             self.session, self.tid, self.content, self.subject, self.icon
@@ -300,7 +325,7 @@ class Message(UsesSession, _Indexed):
         return self
 
     def update_get(self: Self) -> Self:
-        """GET this message on the specified :py:ivar:`mid`."""
+        """GET this message on the specified :py:attr:`mid`."""
         check_fields(self, "mid")
         res = api.get_message_page(
             self.session, self.mid
@@ -330,7 +355,7 @@ class Message(UsesSession, _Indexed):
         return self
 
     def update_quotefast(self: Self) -> Self:
-        """GETs the BBC of message on the specified :py:ivar:`mid`.
+        """GETs the BBC of message on the specified :py:attr:`mid`.
         This uses the `quotefast` action."""
         check_fields(self, "mid")
         params = {
@@ -353,8 +378,10 @@ class Message(UsesSession, _Indexed):
 class Search(UsesSession, Paged):
     """A class representing a search query.
 
-    .. warning:: Searching takes quite a long time for some reason.
-    Use sparingly."""
+    .. warning::
+
+        Searching takes quite a long time for some reason. Use sparingly.
+    """
 
     query: str
     """The text to search for."""

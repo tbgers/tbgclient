@@ -30,7 +30,7 @@ T = TypeVar("T")
 
 class MISSING:
     """An internal sentinel value for non-asynchronous contexts,
-    of which py:func:`asyncio.current_task()` will raise an error for the lack
+    of which :py:func:`asyncio.current_task()` will raise an error for the lack
     of a running event loop."""
 
 

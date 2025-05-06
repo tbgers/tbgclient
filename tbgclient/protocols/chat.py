@@ -10,8 +10,11 @@ from datetime import datetime
 class MessageData(TypedDict):
     """A type that contains information about a message.
 
-    .. note:: This should not be confused with
-    :py:class:`tbgclient.protocols.forum.MessageData`."""
+    .. note::
+
+        This should not be confused with
+        :py:class:`tbgclient.protocols.forum.MessageData`.
+    """
 
     mid: int
     """The message ID."""

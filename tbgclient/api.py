@@ -1,5 +1,13 @@
 """
 Contains functions to communicate with the TBG server.
+
+Casual users of ``tbgclient`` would have little reason to use this module, in
+preference of the equivalent methods defined in :py:mod:`tbgclient.forum`
+classes.
+However, it's still useful to retrieve other pages not yet implemented like
+the `recent posts`_ page.
+
+.. _recent posts: https://tbgforums.com/forums/index.php?action=recent
 """
 
 import requests
@@ -168,7 +176,6 @@ def edit_message(session: Session, mid: int, tid: int,
                  reason: str = "",
                  **kwargs) -> requests.Response:
     """Edits a reply to the specified message ID on a topic ID.
-    (Yes, the topic ID is required!)
 
     :param session: The session used.
     :type session: requests.Session
@@ -221,23 +228,26 @@ def edit_profile(session: Session, uid: int, avatar: str | None = None,
                  signature: str = "", website_title: str = "",
                  website_url: str = "", custom_fields: dict[str, Any] = {},
                  **kwargs) -> requests.Response:
-    """Edits a reply to the specified message ID on a topic ID.
-    (Yes, the topic ID is required!)
+    """Edits the profile of this user ID.
 
     :param session: The session used.
     :type session: requests.Session
-    :param mid: The message ID.
-    :type mid: int
-    :param tid: The topic ID.
-    :type tid: int
-    :param message: The message content.
-    :type message: str
-    :param subject: The message subject.
-    :type subject: str
-    :param icon: The message icon.
-    :type icon: str | PostIcons
-    :param reason: The reason for the edit.
-    :type reason: str
+    :param uid: The user ID.
+    :type uid: int
+    :param avatar: The profile picture of this user.
+    :type avatar: str | None
+    :param blurb: A short string to be put in the user info.
+    :type blurb: str
+    :param birthday: The birthday of this user.
+    :type birthday: date | datetime | None
+    :param signature: The signature of this user.
+    :type signature: str
+    :param website_title: The title for this user's website.
+    :type website_title: str
+    :param website_url: The URL of this user's website.
+    :type website_url: str
+    :param custom_fields: Other fields of this user.
+    :type custom_fields: dict[str, Any]
     :return: The response.
     :rtype: requests.Response
     """
@@ -314,8 +324,10 @@ def login(session: Session, username: str, password: str,
     When given the correct credentials, the returned request will carry
     the session cookie for the user.
 
-    .. warning:: Don't rely on ``session`` storing them, as cookies stored
-    on ``requests.Session`` are global."""
+    .. warning::
+        Don't rely on ``session`` storing them, as cookies stored
+        on ``requests.Session`` are global.
+    """
 
     # get form first to get nonce
     form_res = do_action(session, "login")

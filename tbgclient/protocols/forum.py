@@ -106,12 +106,7 @@ class BoardData(TypedDict, total=False):
 
 
 class TopicData(BoardData, total=False):
-    """A type that contains information about a topic.
-
-    :ivar tid: The topic ID.
-    :ivar topic_name: The topic name.
-    :ivar pages: The amount of pages the topic has
-    """
+    """A type that contains information about a topic."""
     tid: int
     """The topic ID."""
     topic_name: str

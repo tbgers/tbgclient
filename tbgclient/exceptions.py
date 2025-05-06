@@ -1,3 +1,7 @@
+"""
+Exceptions that tbgclient classes may raise.
+"""
+
 import requests
 try:
     from typing import Self
