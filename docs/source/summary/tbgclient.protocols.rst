@@ -4,26 +4,16 @@ tbgclient.protocols package
 Submodules
 ----------
 
-tbgclient.protocols.chat module
--------------------------------
+.. toctree::
+   :maxdepth: 4
 
-.. automodule:: tbgclient.protocols.chat
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-tbgclient.protocols.forum module
---------------------------------
-
-.. automodule:: tbgclient.protocols.forum
-   :members:
-   :undoc-members:
-   :show-inheritance:
+   tbgclient.protocols.chat
+   tbgclient.protocols.forum
 
 Module contents
 ---------------
 
 .. automodule:: tbgclient.protocols
    :members:
-   :undoc-members:
    :show-inheritance:
+   :undoc-members:

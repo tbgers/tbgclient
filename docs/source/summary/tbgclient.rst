@@ -12,50 +12,19 @@ Subpackages
 Submodules
 ----------
 
-tbgclient.api module
---------------------
+.. toctree::
+   :maxdepth: 4
 
-.. automodule:: tbgclient.api
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-tbgclient.chat module
----------------------
-
-.. automodule:: tbgclient.chat
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-tbgclient.exceptions module
----------------------------
-
-.. automodule:: tbgclient.exceptions
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-tbgclient.forum module
-----------------------
-
-.. automodule:: tbgclient.forum
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-tbgclient.session module
-------------------------
-
-.. automodule:: tbgclient.session
-   :members:
-   :undoc-members:
-   :show-inheritance:
+   tbgclient.api
+   tbgclient.chat
+   tbgclient.exceptions
+   tbgclient.forum
+   tbgclient.session
 
 Module contents
 ---------------
 
 .. automodule:: tbgclient
    :members:
-   :undoc-members:
    :show-inheritance:
+   :undoc-members:

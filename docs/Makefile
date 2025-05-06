@@ -3,8 +3,8 @@
 
 # You can set these variables from the command line, and also
 # from the environment for the first two.
-SPHINXOPTS    ?=
-APIDOCOPTS    ?=
+SPHINXOPTS    ?= 
+APIDOCOPTS    ?= -e
 SPHINXBUILD   ?= sphinx-build
 SPHINXAPIDOC  ?= sphinx-apidoc
 SOURCEDIR     = source
