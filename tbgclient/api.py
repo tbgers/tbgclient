@@ -127,6 +127,24 @@ def get_message_page(session: Session, mid: int,
     return request(session, "GET", FORUM_URL + f"?msg={mid}", **kwargs)
 
 
+def get_nonce(*args, **kwargs) -> (requests.Response, dict[str, str]):
+    """Gets and retrieves "nonce" values; hidden inputs that are only used
+    for one request.
+
+    This is required for virtually every POST requests of SMF that involves
+    the user.
+
+    Related terminologies are CSRF tokens and idempotency tokens.
+
+    This function uses the same arguments as :py:func:`do_action()`.
+
+    :return: The response, and the nonce values.
+    """
+    res = do_action(*args, **kwargs)
+    nonce = forum_parser.get_hidden_inputs(res.text)
+    return res, nonce
+
+
 def post_message(session: Session, tid: int, message: str,
                  subject: str = "Reply",
                  icon: str | PostIcons = PostIcons.STANDARD,
@@ -147,8 +165,8 @@ def post_message(session: Session, tid: int, message: str,
     :rtype: requests.Response
     """
     # first we get the nonce values (and other hidden inputs I guess)
-    topic_res = do_action(session, "post2", queries={"topic": tid}, **kwargs)
-    nonce = forum_parser.get_hidden_inputs(topic_res.text)
+    topic_res, nonce = get_nonce(session, "post2", queries={"topic": tid},
+                                 **kwargs)
     # print(nonce)
 
     # then we post the reply
@@ -195,10 +213,9 @@ def edit_message(session: Session, mid: int, tid: int,
     :rtype: requests.Response
     """
     # first we get the nonce values (and other hidden inputs I guess)
-    topic_res = do_action(session, "post", queries={"msg": mid, "topic": tid},
-                          **kwargs)
-    nonce = forum_parser.get_hidden_inputs(topic_res.text)
-    # print(nonce)
+    topic_res, nonce = get_nonce(session, "post",
+                                 queries={"msg": mid, "topic": tid},
+                                 **kwargs)
 
     # then we post the reply
     res = do_action(
@@ -252,11 +269,9 @@ def edit_profile(session: Session, uid: int, avatar: str | None = None,
     :rtype: requests.Response
     """
     # first we get the nonce values (and other hidden inputs I guess)
-    profile_res = do_action(session, "profile",
-                            params={"area": "forumprofile"},
-                            no_percents=True,
-                            **kwargs)
-    nonce = forum_parser.get_hidden_inputs(profile_res.text)
+    profile_res, nonce = get_nonce(session, "profile",
+                                   params={"area": "forumprofile"},
+                                   no_percents=True, **kwargs)
     # we didn't store the user's birthday,
     # so we'll leave it unchanged by default
     if birthday is None:
@@ -330,9 +345,7 @@ def login(session: Session, username: str, password: str,
     """
 
     # get form first to get nonce
-    form_res = do_action(session, "login")
-    # print(form_res.cookies)
-    nonce = forum_parser.get_hidden_inputs(form_res.text)
+    form_res, nonce = get_nonce(session, "login")
 
     # then login
     res = do_action(
