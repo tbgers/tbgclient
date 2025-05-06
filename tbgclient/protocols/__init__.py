@@ -7,4 +7,6 @@ It might seem weird to see this on a Python module (and it is), but linters
 love these stuff.
 """
 
-from . import forum
+from . import forum, chat
+
+__all__ = ["forum", "chat"]
