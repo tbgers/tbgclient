@@ -299,7 +299,7 @@ class Message(UsesSession, _Indexed):
     """The reason why this post is edited."""
     content: str = None
     """The content of this message. This might be raw HTML or BBC,
-    depending on """
+    depending on the function that modifies it."""
     user: User | UserData = None
     """The user posting this message."""
     icon: str | PostIcons = None
