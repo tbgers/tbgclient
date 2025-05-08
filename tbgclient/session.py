@@ -42,7 +42,7 @@ def get_context() -> tuple[Union[Task, MISSING, None], Thread, "BaseProcess"]:
     try:
         task = current_task()
     except RuntimeError:
-        task = MISSING()
+        task = MISSING
     thread = current_thread()
     process = current_process()
     return task, thread, process
