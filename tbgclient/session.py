@@ -97,7 +97,7 @@ class Session:
         # Conveinently, SMF already included it on the query string =)
         url = urlparse(res.headers["location"])
         uid = re.search(r'member=(\d+)', url.query)
-        self.user = User(uid=int(uid[1])).using(self)
+        self.user = User(name=username, uid=int(uid[1]))
 
     def request(self: Self, *args: Any, **kwargs: Any) -> requests.Response:
         """Do a request using this Session's cookie jar."""
