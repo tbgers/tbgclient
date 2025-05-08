@@ -4,18 +4,19 @@ Quick start
 
 This guides assumes you know how to use Python. If you haven't, have look at the `Python tutorial`_ first.
 
-It's recommended to learn the language first before you use libraries like ``tbgclient``. This `Scratch
-project`_ explains why doing the opposite is a bad idea.
+It's *strongly* recommended to learn the language first before you use libraries like tbgclient. This 
+`Scratch project`_ explains why doing the opposite is a bad idea.
 
 .. _Python tutorial: https://docs.python.org/3/tutorial/
 .. _Scratch project: https://scratch.mit.edu/projects/842407135/
 
 
-.. _get-message: 
+.. _quickstart-get-message: 
+
 Retrieving messages
 ===================
 
-Retrieving messages can be done by the ``Message.update_get`` function.
+Retrieving messages can be done by the :py:func:`~tbgclient.Message.update_get()` function.
 
 .. code-block:: python
     
@@ -32,7 +33,8 @@ This will also wrap the object in a session context.
     msg = session.get_message(mid=152062)
 
 
-.. _session:
+.. _quickstart-session:
+
 Sessions
 ========
 
@@ -65,14 +67,15 @@ Another is to make a session context, using the :py:func:`~tbgclient.session.Use
     )
 
 
-.. _default-session:
+.. _quickstart-default-session:
+
 Default session
 ---------------
 
 When no session is specified, whether by the ``with`` statement or by a session context, the default session is used instead.
 This session has no authentication data; it is equivalent to a logged-out user. 
 
-The default session is stored at :py:data:`tbgclient.session.default_session`, though it is recommended to replace it with 
+The default session is stored at :py:data:`~tbgclient.session.default_session`, though it is recommended to replace it with 
 the :py:class:`~tbgclient.session.Session` you made, instead of doing operations directly on the initial default session.
 
 .. code-block:: python

@@ -12,7 +12,9 @@ Welcome to tbgclient's documentation!
    
    qna.rst
    quickstart.rst
-   summary/modules.rst
+   summary/tbgclient.rst
+   convenience.rst
+
 
 
 
