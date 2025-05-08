@@ -128,48 +128,48 @@ class Page(Generic[T]):
 class User(UsesSession, _Indexed):
     """A class that represents a user."""
 
-    uid: int
+    uid: int = None
     """The user's ID."""
-    name: str
+    name: str = None
     """The user's name."""
-    avatar: str
+    avatar: str = None
     """The avatar/profile picture of the user."""
-    group: str | UserGroup
+    group: str | UserGroup = None
     """The user's group."""
-    posts: int
+    posts: int = None
     """The total amount of posts this user has made."""
-    signature: str
+    signature: str = None
     """The signature of this user."""
-    email: str
+    email: str = None
     """The email address of this user."""
-    blurb: str
+    blurb: str = None
     """The personal text of this user."""
-    location: str
+    location: str = None
     """The location of this user."""
-    real_name: str
+    real_name: str = None
     """The real name of this user."""
-    social: dict[str, str]
+    social: dict[str, str] = None
     """Other identities of this user across different social medias."""
-    website: str
+    website: str = None
     """The website URL of this user."""
-    gender: str
+    gender: str = None
     """The gender of this user."""
 
     default_submit_method: ClassVar[str] = "profile"
 
     def update_get(self: Self) -> Self:
-        """GET this user on the specified :py:attr:`uid`."""
-        check_fields(self, "uid")
+        """GET this user on the specified :py:attr:`uid`.
+
+        If :py:attr:`uid` is `None`, this retrieves the current user's
+        profile."""
         res = api.do_action(
             self.session,
             "profile",
-            params={"u": str(self.uid)},
+            params={"u": str(self.uid)} if self.uid is not None else {},
             no_percents=True
         )
         forum_parser.check_errors(res.text, res)
         parsed = forum_parser.parse_profile(res.text)
-        # The parsed dictionary doesn't include the uid
-        parsed["uid"] = self.uid
         self.__init__(**parsed)
         return self
 

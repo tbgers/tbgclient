@@ -541,6 +541,11 @@ def parse_profile(document: str) -> UserData:
 
     result: UserData = {}
 
+    canonical_link = elm.find("link", {"rel": "canonical"})
+    profile_link = urlparse(canonical_link.get("href"))
+    uid = parse_qs(profile_link.query, separator=";")["u"]
+    result["uid"] = int(uid[0])
+
     basic_info = profile_view.find("div", {"id": "basicinfo"})
     # username
     username = basic_info.find("div", class_="username")
