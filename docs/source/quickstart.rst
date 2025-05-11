@@ -4,8 +4,9 @@ Quick start
 
 This guides assumes you know how to use Python. If you haven't, have look at the `Python tutorial`_ first.
 
-It's *strongly* recommended to learn the language first before you use libraries like tbgclient. This 
-`Scratch project`_ explains why doing the opposite is a bad idea.
+.. important::
+    It's *strongly* recommended to learn the language first before you use libraries like tbgclient. This 
+    `Scratch project`_ explains why doing the opposite is a bad idea.
 
 .. _Python tutorial: https://docs.python.org/3/tutorial/
 .. _Scratch project: https://scratch.mit.edu/projects/842407135/
