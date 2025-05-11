@@ -155,7 +155,7 @@ def parse_message(msg: BeautifulSoup) -> MessageData:
         user_info
         .find("li", {"class": "im_icons"})
     )
-    if poster_gender is not None:
+    if poster_gender.find("li") is not None:
         user["gender"] = (
             poster_gender
             .find("li", {"class": re.compile(r"cust_gender")})
@@ -164,7 +164,7 @@ def parse_message(msg: BeautifulSoup) -> MessageData:
         )
     # website
     poster_website = user_info.find("li", {"class": "profile"})
-    if poster_website is not None:
+    if poster_website.find("li") is not None:
         user["website"] = (
             poster_website
             .find("li")
