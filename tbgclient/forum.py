@@ -15,7 +15,7 @@ from .protocols.forum import (
 from .exceptions import RequestError, IncompleteError
 from . import api
 from .parsers import forum as forum_parser
-from dataclasses import dataclass, InitVar, fields, field
+from dataclasses import dataclass, InitVar, fields, field, replace
 from typing import TypeVar, Generic, ClassVar, Any
 try:
     # PORT: 3.10 and below doesn't have typing.Self
@@ -170,8 +170,7 @@ class User(UsesSession, _Indexed):
         )
         forum_parser.check_errors(res.text, res)
         parsed = forum_parser.parse_profile(res.text)
-        self.__init__(**parsed)
-        return self
+        return replace(self, **parsed)
 
     def submit_profile(self: Self,
                        birthday: datetime | date | None = None) -> Self:
@@ -258,9 +257,7 @@ class Topic(Paged, UsesSession, _Indexed):
         # Update my own fields
         last_item = page.hierarchy[-1]
         last_name, _last_url = last_item
-        self.topic_name = last_name
-        self.pages = page.total_pages
-        return self
+        return replace(self, topic_name=last_name, pages=page.total_pages)
 
     def get_page(self: Self, page: int = 1) -> Page["Message"]:
         """Gets a page of posts."""
@@ -338,11 +335,10 @@ class Message(UsesSession, _Indexed):
         post = filter(lambda x: x["mid"] == self.mid, parsed["contents"])
         try:
             post = next(post)
-            self.__init__(**post)
         except StopIteration:
             raise RequestError("Requested post doesn't exist in page",
                                response=res)
-        return self
+        return replace(self, **post)
 
     def submit_edit(self: Self, reason: str = "") -> Self:
         """POST an edit with a specified reason."""
@@ -370,8 +366,7 @@ class Message(UsesSession, _Indexed):
         if "<html" in res.text:  # this is not XML!
             forum_parser.check_errors(res.text, res)
         post = forum_parser.parse_quotefast(res.text)
-        self.__init__(**post)
-        return self
+        return replace(self, **post)
 
 
 @dataclass(frozen=True)
