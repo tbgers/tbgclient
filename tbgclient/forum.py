@@ -535,7 +535,11 @@ class Alert(UsesSession):
         session = cls.session.fget(cls)
         res = api.do_action(
             session, "profile",
-            params={"area": "showalerts"},
+            params={
+                "area": "showalerts",
+                # TODO: Verify and replace this magic number (alerts per page)
+                "start": str((page-1) * 25)
+            },
             no_percents=True
         )
         parsed = forum_parser.parse_page(
