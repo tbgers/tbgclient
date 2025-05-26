@@ -345,7 +345,11 @@ def login(session: Session, username: str, password: str,
     """
 
     # get form first to get nonce
-    form_res, nonce = get_nonce(session, "login")
+    form_res = do_action(session, "login", allow_redirects=False)
+    if form_res.status_code == 302:  # we're already logged in
+        return form_res
+    else:
+        nonce = forum_parser.get_hidden_inputs(form_res.text)
 
     # then login
     res = do_action(

@@ -98,11 +98,13 @@ def get_hidden_inputs(document: str) -> dict[str, str]:
     :type document: str"""
     doc = parser(document)
     form = doc.find_all("form")[1:]  # first one is always the search box
-    if len(form) != 1:
+    if len(form) > 1:
         raise ValueError(
             "FIXME: Found more than 1 form\n"
             f"{[str(x) for x in form if x.clear() or True]}"
         )
+    elif len(form) == 0:
+        raise ValueError("FIXME: Is the search box form missing?")
     inputs = form[0].find_all("input", {"type": "hidden"})
     # filter elements that is not hidden
     nonce = {
@@ -153,12 +155,11 @@ def parse_message(msg: BeautifulSoup) -> MessageData:
     # gender
     poster_gender = (
         user_info
-        .find("li", {"class": "im_icons"})
+        .find("li", {"class": re.compile(r"cust_gender")})
     )
-    if poster_gender.find("li") is not None:
+    if poster_gender is not None:
         user["gender"] = (
             poster_gender
-            .find("li", {"class": re.compile(r"cust_gender")})
             .find("span")
             .get("title")
         )

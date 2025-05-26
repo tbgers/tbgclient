@@ -75,9 +75,10 @@ class Session:
     user: "tbgclient.forum.User"
 
     def __init__(self: Self, get_sess_id: bool = False) -> None:
+        from .forum import User
         self.session = requests.Session()
         self.cookies = RequestsCookieJar()
-        self.user = None
+        self.user = User()
         if get_sess_id:
             # Get the PHPSESSID token.
             self.request("GET", api.FORUM_URL, allow_redirects=False)
@@ -97,7 +98,11 @@ class Session:
         # Conveinently, SMF already included it on the query string =)
         url = urlparse(res.headers["location"])
         uid = re.search(r'member=(\d+)', url.query)
-        self.user = User(name=username, uid=int(uid[1]))
+        if uid is None:
+            # (except when it doesn't, in which case use the existing one)
+            self.user = User(name=username, uid=self.user.uid)
+        else:
+            self.user = User(name=username, uid=int(uid[1]))
 
     def request(self: Self, *args: Any, **kwargs: Any) -> requests.Response:
         """Do a request using this Session's cookie jar."""
