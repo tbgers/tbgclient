@@ -7,6 +7,7 @@ Subpackages
 .. toctree::
    :maxdepth: 4
 
+   tbgclient.parsers
    tbgclient.protocols
 
 Submodules
@@ -26,5 +27,5 @@ Module contents
 
 .. automodule:: tbgclient
    :members:
-   :show-inheritance:
    :undoc-members:
+   :show-inheritance:
