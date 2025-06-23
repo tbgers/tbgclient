@@ -108,6 +108,22 @@ tbgclient was supposed to be a library, not a framework. While the purpose of tb
 about making this or that specific bot. I made it to be a general-use TBGs scraper library; after all, this was once
 a tool to scrape the entirety of the forums.
 
+However, there are existing TBG bot frameworks you can use. Note that most of these are tailored for a specific bot,
+and may not account for your desired needs. Still, it doesn't hurt to ask. Here's a list of them:
+
+* `Roentgenium`_ is a rewrite of `Nihonium`_ that uses tbgclient to communicate with the TBGs, courtesy of 
+  `Gilbert189`_. If you have a bot that uses the new Nihonium command framework, it should work with Roentgenium. 
+  (No telling though.)
+* `TBG-Forums-Bot-Framework`_ (that's a mouthful) is a custom-built framework made by `Luigis_Pizza`_. 
+  It comes in one script, so if that's your jam you can use that.
+
+.. _Roentgenium: https://github.com/Gilbert189/Roentgenium
+.. _Nihonium: https://github.com/realicraft/Nihonium
+.. _TBG-Forums-Bot-Framework: https://github.com/PhantomLuigi/TBG-Forums-Bot-Framework
+
+.. _Gilbert189: https://tbgforums.com/forums/index.php?action=profile;u=1672
+.. _Luigis_Pizza: https://tbgforums.com/forums/index.php?action=profile;u=1661
+
 
 Miscellaneous
 =============
