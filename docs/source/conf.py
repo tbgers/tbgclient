@@ -9,7 +9,7 @@
 project = 'tbgclient'
 copyright = '2025, Gilbert189'
 author = 'Gilbert189'
-release = '0.5.1a0'
+release = '0.6.0a0'
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
