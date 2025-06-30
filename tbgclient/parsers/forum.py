@@ -165,7 +165,7 @@ def parse_message(msg: BeautifulSoup) -> MessageData:
         )
     # website
     poster_website = user_info.find("li", {"class": "profile"})
-    if poster_website.find("li") is not None:
+    if poster_website is not None and poster_website.find("li") is not None:
         user["website"] = (
             poster_website
             .find("li")
