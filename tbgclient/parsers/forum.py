@@ -134,6 +134,9 @@ def parse_message(msg: BeautifulSoup) -> MessageData:
     user: UserData = {}
     poster_title = poster.find("h4").find("a")
     user["name"] = poster_title.text
+    user_url = urlparse(poster_title.get("href"))
+    uid = parse_qs(user_url.query, separator=";")["u"]
+    user["uid"] = int(uid[0])
     # commence user_info...
     user_info = poster.find("ul", {"class": "user_info"})
     # avatar
