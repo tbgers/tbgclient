@@ -96,7 +96,7 @@ class Session:
         self.cookies.update(res.cookies)
         # Get the user's ID.
         # Conveinently, SMF already included it on the query string =)
-        url = urlparse(res.headers["location"])
+        url = urlparse(res.headers.get("location", ""))
         uid = re.search(r'member=(\d+)', url.query)
         if uid is None:
             # (except when it doesn't, in which case use the existing one)
