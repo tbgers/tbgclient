@@ -132,11 +132,13 @@ def parse_message(msg: BeautifulSoup) -> MessageData:
         edited = None
 
     user: UserData = {}
-    poster_title = poster.find("h4").find("a")
-    user["name"] = poster_title.text
-    user_url = urlparse(poster_title.get("href"))
-    uid = parse_qs(user_url.query, separator=";")["u"]
-    user["uid"] = int(uid[0])
+    poster_title = poster.find("h4")
+    user["name"] = poster_title.text.strip()
+    user_url = poster_title.find("a")
+    if user_url is not None:
+        user_url = urlparse(user_url.get("href"))
+        uid = parse_qs(user_url.query, separator=";")["u"]
+        user["uid"] = int(uid[0])
     # commence user_info...
     user_info = poster.find("ul", {"class": "user_info"})
     # avatar
@@ -602,8 +604,9 @@ def parse_profile(document: str) -> UserData:
     result["posts"] = parse_integer(result["posts"].split()[0])
     # signature
     signature = profile_view.find("div", class_="signature")
-    signature_title = signature.find("h5", text="Signature:")
-    signature_title.decompose()
-    result["signature"] = str(signature)
+    if signature is not None:
+        signature_title = signature.find("h5", text="Signature:")
+        signature_title.decompose()
+        result["signature"] = str(signature)
 
     return result
