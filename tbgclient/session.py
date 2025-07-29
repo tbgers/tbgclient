@@ -73,6 +73,8 @@ class Session:
     session: requests.Session
     cookies: RequestsCookieJar
     user: "tbgclient.forum.User"
+    timeout: int = 30
+    "Default timeout period for requests."
 
     def __init__(self: Self, get_sess_id: bool = False) -> None:
         from .forum import User
@@ -108,6 +110,8 @@ class Session:
         """Do a request using this Session's cookie jar."""
         if "cookies" in kwargs:
             kwargs["cookies"] = {**kwargs["cookies"], **self.cookies}
+        if "timeout" not in kwargs:
+            kwargs["timeout"] = self.timeout
         res = self.session.request(*args, **kwargs)
         self.cookies.update(res.cookies)
         return res
