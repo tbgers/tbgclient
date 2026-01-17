@@ -10,6 +10,7 @@ from datetime import datetime, timezone, timedelta
 from urllib.parse import urlparse, parse_qs
 from functools import reduce
 from warnings import warn
+from html import unescape
 
 T = TypeVar('T')
 date_format = "%b %d, %Y, %I:%M:%S %p"
@@ -528,8 +529,8 @@ def parse_quotefast(document: str) -> MessageData:
         edit_time = datetime.fromtimestamp(edit_time, timezone.utc)
 
     return {
-        "subject": subject.text,
-        "content": message.text,
+        "subject": unescape(subject.text),
+        "content": unescape(message.text),
         "mid": parse_integer(message.get("id")[4:]),
         "edited": edit_time
     }
