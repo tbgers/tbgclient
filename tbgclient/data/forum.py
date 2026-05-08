@@ -52,7 +52,7 @@ class Paged(ABC, Sequence, Generic[T]):
 
 
 @dataclass(kw_only=True)
-class PageData(Generic[T]):
+class PageData(Data, Generic[T]):
     """A type that contains information about a page.
     """
 
@@ -170,7 +170,7 @@ class UserData(Data):
     """The user's name."""
     avatar: str
     """The avatar/profile picture of the user."""
-    group: str | UserGroup
+    group: UserGroup
     """The user's group."""
     posts: int
     """The total amount of posts this user has made."""
@@ -203,13 +203,13 @@ class MessageData(TopicData):
     """The message subject."""
     date: str | datetime
     """The date when this message was posted."""
-    edited: str | None
+    edited: str
     """The date when this message was last edited."""
     content: str
     """The message content."""
     user: UserData
     """The poster of the message."""
-    icon: str | PostIcons
+    icon: PostIcons
     """The icon used in the message. Usually this is invisible."""
 
 

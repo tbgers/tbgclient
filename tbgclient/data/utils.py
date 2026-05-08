@@ -3,7 +3,8 @@ Miscellaneous utilities for this module.
 """
 from dataclasses import fields
 from warnings import warn
-from typing import Any, Iterator
+from typing import Any, Iterator, Union, get_origin, get_args
+from types import UnionType
 from collections.abc import Mapping
 try:
     # PORT: 3.10 and below doesn't have typing.Self
@@ -43,6 +44,53 @@ class Data(Mapping):
                 " this might be unintended"
             )
         return setattr(self, name, value)
+
+    def __setattr__(self: Self, name: str, value: Any) -> None:
+        if "__field_types__" not in dir(self):
+            object.__setattr__(self, "__field_types__", {
+                x.name: x.type for x in fields(self)
+            })
+        # try to cast the values into the designated types
+        if value is not None:
+            target = self.__field_types__.get(name, Any)
+            origin = get_origin(target)
+            if target is Any:
+                pass
+            elif origin is Union or origin is UnionType:
+                excs = []
+                types = get_args(target)
+                if not (
+                    Any in types
+                    # no point trying to cast this value if above is the case
+                    or any(isinstance(value, t) for t in types)
+                ):
+                    for t in types:
+                        try:
+                            value = t(value)
+                            break
+                        except Exception as e:
+                            excs.append(e)
+                            pass
+                    else:
+                        raise ExceptionGroup(
+                            f"Cannot cast value {value} to {target}",
+                            excs
+                        )
+            elif origin is not None and not isinstance(value, origin):
+                try:
+                    value = origin(value)
+                except Exception as e:
+                    raise TypeError(
+                        f"Cannot cast value {value} to {origin}"
+                    ) from e
+            elif origin is None and not isinstance(value, target):
+                try:
+                    value = target(value)
+                except Exception as e:
+                    raise TypeError(
+                        f"Cannot cast value {value} to {target}"
+                    ) from e
+        object.__setattr__(self, name, value)
 
     def __iter__(self: Self) -> Iterator[str]:
         _check_field_names(self)
