@@ -15,7 +15,7 @@ from datetime import date, datetime
 from .exceptions import RequestError
 import urllib.parse
 from .parsers import forum as forum_parser
-from .protocols.forum import PostIcons
+from .data.forum import PostIcons
 from typing import Any, Union, TYPE_CHECKING
 if TYPE_CHECKING:
     from . import session

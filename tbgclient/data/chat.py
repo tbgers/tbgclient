@@ -1,13 +1,16 @@
 """
-Protocols that signifies parts of the TBGs chat.
+Data classes that signifies parts of the TBGs chat.
 """
 
-from typing import TypedDict
+from dataclasses import dataclass
 from .forum import UserData
 from datetime import datetime
 
+from .utils import Data
 
-class MessageData(TypedDict):
+
+@dataclass(kw_only=True)
+class MessageData(Data):
     """A type that contains information about a message.
 
     .. note::
@@ -28,7 +31,8 @@ class MessageData(TypedDict):
     """The date this message is posted."""
 
 
-class ResponseData(TypedDict):
+@dataclass(kw_only=True)
+class ResponseData(Data):
     """A type representing the response of the poll."""
 
     infos: dict[str, str]

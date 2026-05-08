@@ -7,7 +7,7 @@ from . import exceptions
 
 from .forum import Message, Topic, User, Page, Search, Alert
 from .session import Session
-from .protocols.forum import Smilies, PostIcons, UserGroup
+from .data.forum import Smilies, PostIcons, UserGroup
 
 Session().make_default()
 

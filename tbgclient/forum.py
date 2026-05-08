@@ -7,15 +7,15 @@ so any dataclass operations will work to them.
 .. (it also makes implementation easier hehe)
 """
 from .session import UsesSession
-from .protocols.forum import (
-    Indexed, UserGroup, Paged, PostIcons, UserData, SearchType, SortBy,
-    SortOrder
+from .data.forum import (
+    Paged, PostIcons, UserData, SearchType, SortBy, SortOrder,
+    PageData, TopicData, MessageData
 )
 # from .protocols.forum import
 from .exceptions import RequestError, IncompleteError
 from . import api
 from .parsers import forum as forum_parser
-from dataclasses import dataclass, InitVar, fields, field, replace
+from dataclasses import dataclass, InitVar, field, replace
 from typing import TypeVar, Generic, ClassVar, Any
 try:
     # PORT: 3.10 and below doesn't have typing.Self
@@ -42,76 +42,13 @@ def check_fields(self: Self, *fields) -> Self:
         raise IncompleteError(missing)
 
 
-class _Indexed(Indexed):
-    """An altered version of Indexed."""
-
-    default_update_method = "get"
-    default_submit_method = "post"
-
-    def update(self: Self, method: str = None, **kwargs) -> Self:
-        """See :py:class:`Indexed`.
-
-        :param method: The method to use.
-        :raise IncompleteError: Some necessary fields are not defined.
-        """
-        if method is None:
-            method = self.default_update_method
-        attrs = dir(self)
-        my_fields = {field.name for field in fields(self)}
-        method_name = "update_" + method
-
-        excess_kwargs = {}
-        for k, v in kwargs.items():
-            if k in my_fields:
-                setattr(self, k, v)
-            else:
-                excess_kwargs[k] = v
-
-        if method_name in attrs:
-            return getattr(self, method_name)(**excess_kwargs)
-        else:
-            raise NotImplementedError(f"method {method} not implemented")
-
-    def submit(self: Self, method: str = None, **kwargs) -> Self:
-        """See :py:class:`Indexed`.
-
-        :param method: The method to use.
-        :raise IncompleteError: Some necessary fields are not defined."""
-        if method is None:
-            method = self.default_submit_method
-        attrs = dir(self)
-        my_fields = {field.name for field in fields(self)}
-        method_name = "submit_" + method
-
-        excess_kwargs = {}
-        for k, v in kwargs.items():
-            if k in my_fields:
-                setattr(self, k, v)
-            else:
-                excess_kwargs[k] = v
-
-        if method_name in attrs:
-            return getattr(self, method_name)(**excess_kwargs)
-        else:
-            raise NotImplementedError(f"method {method} not implemented")
-
-
 @dataclass
-class Page(Generic[T]):
+class Page(PageData, Generic[T]):
     """A class representing a page.
 
     This object is polymorphic; it can support pages of different content
     types.
     """
-
-    hierarchy: list[tuple[str, str]]
-    """The hierarchy of this page."""
-    current_page: int
-    """The current page number."""
-    total_pages: int
-    """The total pages."""
-    contents: list[T]
-    """The contents of the page."""
     content_type: InitVar[T]
 
     def __post_init__(self: Self, content_type: T) -> None:
@@ -125,37 +62,8 @@ class Page(Generic[T]):
 
 
 @dataclass
-class User(UsesSession, _Indexed):
+class User(UsesSession, UserData):
     """A class that represents a user."""
-
-    uid: int = None
-    """The user's ID."""
-    name: str = None
-    """The user's name."""
-    avatar: str = None
-    """The avatar/profile picture of the user."""
-    group: str | UserGroup = None
-    """The user's group."""
-    posts: int = None
-    """The total amount of posts this user has made."""
-    signature: str = None
-    """The signature of this user."""
-    email: str = None
-    """The email address of this user."""
-    blurb: str = None
-    """The personal text of this user."""
-    location: str = None
-    """The location of this user."""
-    real_name: str = None
-    """The real name of this user."""
-    social: dict[str, str] = None
-    """Other identities of this user across different social medias."""
-    website: str = None
-    """The website URL of this user."""
-    gender: str = None
-    """The gender of this user."""
-
-    default_submit_method: ClassVar[str] = "profile"
 
     def update_get(self: Self) -> Self:
         """GET this user on the specified :py:attr:`uid`.
@@ -238,15 +146,8 @@ class User(UsesSession, _Indexed):
 
 
 @dataclass
-class Topic(Paged, UsesSession, _Indexed):
+class Topic(Paged, UsesSession, TopicData):
     """A class that represents a topic."""
-
-    tid: int = None
-    """The topic ID."""
-    topic_name: str = None
-    """The topic name."""
-    pages: int = None
-    """The amount of pages the topic has."""
 
     def __post_init__(self: Self) -> None:
         self.total_pages = 0
@@ -281,32 +182,10 @@ class Topic(Paged, UsesSession, _Indexed):
 
 
 @dataclass
-class Message(UsesSession, _Indexed):
+class Message(UsesSession, MessageData):
     """A class that represents a message."""
 
-    tid: int = None
-    """The topic ID that this message is posted on."""
-    mid: int = None
-    """The message ID."""
-    subject: str = None
-    """The subject of this message"""
-    date: str = None
-    """When this message is posted."""
-    edited: str | None = None
-    """The reason why this post is edited."""
-    content: str = None
-    """The content of this message. This might be raw HTML or BBC,
-    depending on the function that modifies it."""
-    user: User | UserData = None
-    """The user posting this message."""
-    icon: str | PostIcons = None
-    """The category icon of this message."""
-    board_name: InitVar[str] = None
-    """The board name of this message's topic."""
-    bid: InitVar[int] = None
-    """The board ID of this message's topic."""
-
-    def __post_init__(self: Self, board_name: str, bid: int) -> None:
+    def __post_init__(self: Self) -> None:
         if type(self.user) is dict:
             self.user = User(**self.user)
         if type(self.icon) is str:

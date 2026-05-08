@@ -2,7 +2,8 @@
 Parsing utilities for the TBGs chat.
 """
 
-from tbgclient.protocols.chat import ResponseData
+from tbgclient.data.forum import UserData
+from tbgclient.data.chat import ResponseData, MessageData
 from bs4 import BeautifulSoup
 from email.utils import parsedate_to_datetime as parse_date
 
@@ -24,31 +25,31 @@ def parse_response(response: str) -> ResponseData:
     users = []
     if (elm := document.find("users")) is not None:
         for user in elm.children:
-            users.append({
-                "uid": int(user["userID"]),
-                "group": user["userRole"],
-                "name": user.contents[0],
-            })
+            users.append(UserData(
+                uid=int(user["userID"]),
+                group=user["userRole"],
+                name=user.contents[0],
+            ))
 
     # Parse the messages.
     messages = []
     if (elm := document.find("messages")) is not None:
         for message in elm.children:
             username, text = message.contents
-            messages.append({
-                "mid": int(message["id"]),
-                "date": parse_date(message["dateTime"]),
-                "user": {
-                    "uid": int(message["userID"]),
-                    "group": message["userRole"],
-                    "name": username.contents[0],
-                },
-                "cid": int(message["channelID"]),
-                "content": text.contents[0]
-            })
+            messages.append(MessageData(
+                mid=int(message["id"]),
+                date=parse_date(message["dateTime"]),
+                user=UserData(
+                    uid=int(message["userID"]),
+                    group=message["userRole"],
+                    name=username.contents[0],
+                ),
+                cid=int(message["channelID"]),
+                content=text.contents[0]
+            ))
 
-    return {
-        "infos": infos,
-        "users": users,
-        "messages": messages,
-    }
+    return ResponseData(
+        infos=infos,
+        users=users,
+        messages=messages,
+    )

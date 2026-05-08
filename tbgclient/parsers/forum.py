@@ -1,8 +1,3 @@
-from bs4 import BeautifulSoup, NavigableString
-from tbgclient.protocols.forum import (
-    MessageData, PageData, UserData, AlertData, BoardData, TopicData
-)
-from tbgclient.exceptions import RequestError
 import re
 from typing import TypeVar, Callable
 from requests import Response
@@ -11,6 +6,14 @@ from urllib.parse import urlparse, parse_qs
 from functools import reduce
 from warnings import warn
 from html import unescape
+from dataclasses import replace
+
+from bs4 import BeautifulSoup, NavigableString
+
+from tbgclient.data.forum import (
+    MessageData, PageData, UserData, AlertData, BoardData, TopicData
+)
+from tbgclient.exceptions import RequestError
 
 T = TypeVar('T')
 date_format = "%b %d, %Y, %I:%M:%S %p"
@@ -197,15 +200,15 @@ def parse_message(msg: BeautifulSoup) -> MessageData:
     if signature is not None:
         user["signature"] = "".join(map(str, signature.children)).strip()
 
-    return {
-        "mid": mid,
-        "content": "".join(map(str, content.children)).strip(),
-        "edited": edited,
-        "user": user,
-        "icon": icon,
-        "date": datetime.strptime(post_title.text, date_format),
-        "subject": post_title.get("title")
-    }
+    return MessageData(
+        mid=mid,
+        content="".join(map(str, content.children)).strip(),
+        edited=edited,
+        user=UserData(**user),
+        icon=icon,
+        date=datetime.strptime(post_title.text, date_format),
+        subject=post_title.get("title"),
+    )
 
 
 def parse_topic_content(content: BeautifulSoup,
@@ -229,7 +232,7 @@ def parse_topic_content(content: BeautifulSoup,
     tid = queries.setdefault('topic', '0')
     tid = int(tid.split(".")[0])
     return [
-        {"tid": tid, **parse_message(msg)}
+        replace(parse_message(msg), tid=tid)
         for msg in messages
     ]
 
@@ -284,23 +287,23 @@ def parse_search_item(msg: BeautifulSoup) -> MessageData:
     else:
         uid = parse_qs(user_query["action"][0], separator=";")["u"]
 
-    return {
-        "board_name": board_name,
-        "bid": int(bid),
-        "subject": subject,
-        "tid": int(tid),
-        "mid": mid,
-        "user": {
-            "name": username,
-            "uid": int(uid[0])
-        },
-        "date": date_text,
-        "content": (
+    return MessageData(
+        board_name=board_name,
+        bid=int(bid),
+        subject=subject,
+        tid=int(tid),
+        mid=mid,
+        user=UserData(
+            name=username,
+            uid=int(uid[0]),
+        ),
+        date=date_text,
+        content=(
             "".join(map(str, content.children)).strip()
             if content is not None
             else None
         ),
-    }
+    )
 
 
 def parse_search_content(
@@ -457,11 +460,11 @@ def parse_alerts_content(
         else:
             aid = parse_qs(button_url.query, separator=";")["aid"]
 
-        result.append({
+        result.append(AlertData(
             **matched,
-            "date": date,
-            "aid": int(aid[0]),
-        })
+            date=date,
+            aid=int(aid[0]),
+        ))
 
     return result
 
@@ -501,12 +504,12 @@ def parse_page(document: str, page_parser: Callable[[BeautifulSoup],
     # get content
     content = page_parser(content_section, hierarchy)
 
-    return {
-        "hierarchy": hierarchy,
-        "current_page": current_page,
-        "total_pages": total_pages,
-        "contents": content
-    }
+    return PageData(
+        hierarchy=hierarchy,
+        current_page=current_page,
+        total_pages=total_pages,
+        contents=content
+    )
 
 
 def parse_quotefast(document: str) -> MessageData:
@@ -528,12 +531,12 @@ def parse_quotefast(document: str) -> MessageData:
     else:
         edit_time = datetime.fromtimestamp(edit_time, timezone.utc)
 
-    return {
-        "subject": unescape(subject.text),
-        "content": unescape(message.text),
-        "mid": parse_integer(message.get("id")[4:]),
-        "edited": edit_time
-    }
+    return MessageData(
+        subject=unescape(subject.text),
+        content=unescape(message.text),
+        mid=parse_integer(message.get("id")[4:]),
+        edited=edit_time
+    )
 
 
 def parse_profile(document: str) -> UserData:
@@ -546,7 +549,7 @@ def parse_profile(document: str) -> UserData:
     elm = parser(document)
     profile_view = elm.find("div", {"id": "profileview"})
 
-    result: UserData = {}
+    result = {}
 
     canonical_link = elm.find("link", {"rel": "canonical"})
     profile_link = urlparse(canonical_link.get("href"))
@@ -610,4 +613,4 @@ def parse_profile(document: str) -> UserData:
         signature_title.decompose()
         result["signature"] = str(signature)
 
-    return result
+    return UserData(**result)

@@ -1,8 +1,8 @@
 """
-Protocols that signifies parts of a forum.
+Data classes that signifies parts of a forum.
 """
 
-from typing import TypeVar, TypedDict, Generic, Any
+from typing import Generic, Any, TypeVar
 try:
     # PORT: 3.10 and below doesn't have typing.Self
     from typing import Self
@@ -12,41 +12,11 @@ from enum import Enum
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
 from datetime import datetime
+from dataclasses import dataclass
 
-T = TypeVar('T')
-try:
-    # PORT: Until 3.11, you cannot create a class that
-    # inherits TypedDict and Generic
-    type("_inherit_test", (TypedDict, Generic[T]), {})
-except TypeError:
-    from typing_extensions import TypedDict
+from .utils import Data
 
-
-class Indexed(ABC):
-    """ABC for anything that has an index (for example, messages)."""
-
-    # RFE: it would be nicer if we can just match function under a prefix
-    @abstractmethod
-    def update(self: Self, method: str) -> Self:
-        """Updates this object.
-
-        This function is to modify objects that already exists on the TBG
-        server.
-
-        :param method: The method to use.
-        :raise IncompleteError: Some necessary fields are not defined.
-        """
-        raise NotImplementedError
-
-    @abstractmethod
-    def submit(self: Self, method: str) -> Self:
-        """Submit this object.
-
-        This function is to create objects that don't exist on the TBG server.
-
-        :param method: The method to use.
-        :raise IncompleteError: Some necessary fields are not defined."""
-        raise NotImplementedError
+T = TypeVar("T")
 
 
 class Paged(ABC, Sequence, Generic[T]):
@@ -81,7 +51,8 @@ class Paged(ABC, Sequence, Generic[T]):
         return self.get_size()
 
 
-class PageData(TypedDict, Generic[T], total=False):
+@dataclass(kw_only=True)
+class PageData(Generic[T]):
     """A type that contains information about a page.
     """
 
@@ -95,7 +66,8 @@ class PageData(TypedDict, Generic[T], total=False):
     """The contents of the page."""
 
 
-class BoardData(TypedDict, total=False):
+@dataclass(kw_only=True)
+class BoardData(Data):
     """A type that contains information about a board.
     """
 
@@ -105,7 +77,8 @@ class BoardData(TypedDict, total=False):
     """The board name."""
 
 
-class TopicData(BoardData, total=False):
+@dataclass(kw_only=True)
+class TopicData(BoardData):
     """A type that contains information about a topic."""
     tid: int
     """The topic ID."""
@@ -186,7 +159,8 @@ class SortOrder(Enum):
     """Sort descending."""
 
 
-class UserData(TypedDict, total=False):
+@dataclass(kw_only=True)
+class UserData(Data):
     """A type that contains information about a user.
     """
 
@@ -218,7 +192,8 @@ class UserData(TypedDict, total=False):
     """The gender of this user."""
 
 
-class MessageData(TopicData, total=False):
+@dataclass(kw_only=True)
+class MessageData(TopicData):
     """A type that contains information about a message.
     """
 
@@ -238,7 +213,8 @@ class MessageData(TopicData, total=False):
     """The icon used in the message. Usually this is invisible."""
 
 
-class AlertData(TypedDict, total=False):
+@dataclass(kw_only=True)
+class AlertData(Data):
     """A type that contains information about a message."""
 
     aid: int
