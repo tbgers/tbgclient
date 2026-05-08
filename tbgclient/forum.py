@@ -6,15 +6,6 @@ so any dataclass operations will work to them.
 
 .. (it also makes implementation easier hehe)
 """
-from .session import UsesSession
-from .data.forum import (
-    Paged, PostIcons, UserData, SearchType, SortBy, SortOrder,
-    PageData, TopicData, MessageData
-)
-# from .protocols.forum import
-from .exceptions import RequestError, IncompleteError
-from . import api
-from .parsers import forum as forum_parser
 from dataclasses import dataclass, InitVar, field, replace
 from typing import TypeVar, Generic, ClassVar, Any
 try:
@@ -28,6 +19,17 @@ import zlib
 import base64
 from datetime import datetime, date
 from itertools import count
+
+from .session import UsesSession
+from .data.forum import (
+    Paged, PageData, UserData, TopicData, MessageData,
+    SearchType, SortBy, SortOrder,
+)
+from .data.utils import Data
+# from .protocols.forum import
+from .exceptions import RequestError, IncompleteError
+from . import api
+from .parsers import forum as forum_parser
 
 T = TypeVar("T")
 
@@ -149,6 +151,9 @@ class User(UsesSession, UserData):
 class Topic(Paged, UsesSession, TopicData):
     """A class that represents a topic."""
 
+    pages: int
+    """The amount of pages this topic has."""
+
     def __post_init__(self: Self) -> None:
         self.total_pages = 0
 
@@ -186,10 +191,8 @@ class Message(UsesSession, MessageData):
     """A class that represents a message."""
 
     def __post_init__(self: Self) -> None:
-        if type(self.user) is dict:
+        if isinstance(self.user, dict) or isinstance(self.user, UserData):
             self.user = User(**self.user)
-        if type(self.icon) is str:
-            self.icon = PostIcons(self.icon)
 
     def submit_post(self: Self) -> Self:
         """POST this message on the specified :py:attr:`tid`."""
@@ -355,17 +358,10 @@ class Alert(UsesSession):
     This class doesn't create an instance of itself, but instead subclasses
     that represents every alert cases."""
     @dataclass(frozen=True)
-    class Case:
+    class Case(Data):
         """Shared attributes and functions for each case."""
         date: datetime
         aid: int
-
-        def __post_init__(self: Self) -> None:
-            for name, annotation in self.__annotations__.items():
-                if isinstance(annotation, InitVar):
-                    continue
-                attr = getattr(self, name)
-                object.__setattr__(self, name, annotation(**attr))
 
     @dataclass(frozen=True)
     class Quoted(Case):
@@ -385,9 +381,6 @@ class Alert(UsesSession):
         user: User
         topic: Topic
         board: InitVar[Any]  # currently unused
-
-        def __post_init__(self: Self, board: Any) -> None:
-            super().__post_init__()
 
     @dataclass(frozen=True)
     class Unknown(Case):
