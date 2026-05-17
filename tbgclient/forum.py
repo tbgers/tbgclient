@@ -6,7 +6,9 @@ so any dataclass operations will work to them.
 
 .. (it also makes implementation easier hehe)
 """
-from dataclasses import dataclass, InitVar, field, replace
+from dataclasses import (
+    dataclass, InitVar, field, replace, fields, FrozenInstanceError
+)
 from typing import TypeVar, Generic, ClassVar, Any
 try:
     # PORT: 3.10 and below doesn't have typing.Self
@@ -23,7 +25,7 @@ from itertools import count
 from .session import UsesSession
 from .data.forum import (
     Paged, PageData, UserData, TopicData, MessageData,
-    SearchType, SortBy, SortOrder,
+    SearchType, SortBy, SortOrder, BoardData
 )
 from .data.utils import Data
 # from .protocols.forum import
@@ -53,7 +55,8 @@ class Page(PageData, Generic[T]):
     """
     content_type: InitVar[T]
 
-    def __post_init__(self: Self, content_type: T) -> None:
+    def __post_init__(self: Self, value: Any, content_type: T) -> None:
+        super().__post_init__(value=value)
         # cast self.contents with content_type
         self.contents = [
             content_type(**x) for x in self.contents
@@ -154,7 +157,8 @@ class Topic(Paged, UsesSession, TopicData):
     pages: int
     """The amount of pages this topic has."""
 
-    def __post_init__(self: Self) -> None:
+    def __post_init__(self: Self, value: Any) -> None:
+        super().__post_init__(value=value)
         self.total_pages = 0
 
     def update_get(self: Self) -> Self:
@@ -190,7 +194,8 @@ class Topic(Paged, UsesSession, TopicData):
 class Message(UsesSession, MessageData):
     """A class that represents a message."""
 
-    def __post_init__(self: Self) -> None:
+    def __post_init__(self: Self, value: Any) -> None:
+        super().__post_init__(value=value)
         if isinstance(self.user, dict) or isinstance(self.user, UserData):
             self.user = User(**self.user)
 
@@ -286,7 +291,8 @@ class Search(UsesSession, Paged):
     # IDEA: Make this an enum?
     MSGS_PER_PAGE: ClassVar[int] = 30
 
-    def __post_init__(self: Self) -> None:
+    def __post_init__(self: Self, value: Any) -> None:
+        super().__post_init__(value=value)
         # Enum-ify!
         if type(self.match) is str:
             self.match = SearchType[self.match.lower()]
@@ -357,32 +363,51 @@ class Alert(UsesSession):
 
     This class doesn't create an instance of itself, but instead subclasses
     that represents every alert cases."""
-    @dataclass(frozen=True)
+    @dataclass
     class Case(Data):
         """Shared attributes and functions for each case."""
         date: datetime
         aid: int
 
-    @dataclass(frozen=True)
+        def __post_init__(self: Self, value: Any) -> None:
+            super().__post_init__(value=value)
+            # Freeze the dataclasses *after* we've casted it with Data
+            field_names = {x.name for x in fields(self)}
+
+            def __setattr__(self: Self, name: str, value: Any) -> None:
+                if type(self) is Data or name in field_names:
+                    raise FrozenInstanceError(f"cannot assign to field {name}")
+            __setattr__.__name__ = self.__setattr__.__name__
+            __setattr__.__qualname__ = self.__setattr__.__qualname__
+            self.__setattr__ = __setattr__
+
+            def __delattr__(self: Self, name: str, value: Any) -> None:
+                if type(self) is Data or name in field_names:
+                    raise FrozenInstanceError(f"cannot delete field {name}")
+            __delattr__.__name__ = self.__delattr__.__name__
+            __delattr__.__qualname__ = self.__delattr__.__qualname__
+            self.__delattr__ = __delattr__
+
+    @dataclass
     class Quoted(Case):
         """Someone quoted a message from this user."""
         user: User
         msg: Message
 
-    @dataclass(frozen=True)
+    @dataclass
     class Mentioned(Case):
         """Someone mentioned this user."""
         user: User
         msg: Message
 
-    @dataclass(frozen=True)
+    @dataclass
     class NewTopic(Case):
         """Someone made a new topic in a board."""
         user: User
         topic: Topic
-        board: InitVar[Any]  # currently unused
+        board: BoardData  # currently unused, just leave it
 
-    @dataclass(frozen=True)
+    @dataclass
     class Unknown(Case):
         """An alert that cannot be identified their type at this moment."""
         data: Any

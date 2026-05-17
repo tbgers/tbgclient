@@ -1,7 +1,7 @@
 """
 Miscellaneous utilities for this module.
 """
-from dataclasses import fields
+from dataclasses import fields, is_dataclass, InitVar, field
 from warnings import warn
 from typing import Any, Iterator, Union, get_origin, get_args
 from types import UnionType
@@ -22,11 +22,30 @@ class Data(Mapping):
     """Base class for all data classes used by ``tbgclient``."""
 
     def __init_subclass__(cls: Any) -> None:
+        # better than having to make this a dataclass
+        cls.__annotations__.update(Data.__annotations__)
         # set the annotated attributes to None so that it's optional
         # apparently __annotations__ is still used on 3.14?
         annotations = cls.__annotations__
         for k in annotations.keys():
             setattr(cls, k, getattr(cls, k, None))
+
+    # allow dataclasses to cast other dataclasses that bases from them
+    value: InitVar = field(kw_only=False, default=None)
+
+    def __post_init__(self: Self, value: Any = None) -> None:
+        if value is None:
+            return
+        if is_dataclass(value) and type(value) in type(self).__mro__:
+            for fld in fields(value):
+                name = fld.name
+                # use object.__setattr__ in case the dataclass is frozen
+                object.__setattr__(self, name, getattr(value, name))
+        else:
+            raise TypeError(
+                f"cannot cast non-related {type(value).__name__!r} object"
+                f" into {type(self).__name__}"
+            )
 
     # implement methods required by Mapping
     # since these classes used to be dicts

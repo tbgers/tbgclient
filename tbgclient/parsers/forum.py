@@ -357,20 +357,20 @@ def parse_alerts_content(
             uid = user_query["u"]
         else:
             uid = parse_qs(user_url.query, separator=";")["u"]
-        return {
-            "name": username,
-            "uid": int(uid[0])
-        }
+        return UserData(
+            name=username,
+            uid=int(uid[0])
+        )
 
     def parse_topic_link(link: BeautifulSoup) -> TopicData:
         """From a message link element, turn it into a TopicData."""
 
         topic_link = urlparse(link.get("href"))
         tid = parse_qs(topic_link.query)["topic"][0].split(".")[0]
-        return {
-            "tid": int(tid),
-            "topic_name": link.text
-        }
+        return TopicData(
+            tid=int(tid),
+            topic_name=link.text
+        )
 
     def parse_message_link(link: BeautifulSoup) -> MessageData:
         """From a message link element, turn it into a MessageData."""
@@ -382,20 +382,20 @@ def parse_alerts_content(
         msg_link = urlparse(link.get("href"))
         subject = link.get("title")
         mid = int(msg_link.fragment[3:])
-        return {
-            "subject": subject,
-            "mid": mid,
+        return MessageData(
+            subject=subject,
+            mid=mid,
             **topic_data,
-        }
+        )
 
     def parse_board_link(link: BeautifulSoup) -> BoardData:
         board_name = link.text
         board_link = urlparse(link.get("href"))
         bid = parse_qs(board_link.query)["board"][0].split(".")[0]
-        return {
-            "board_name": board_name,
-            "bid": int(bid),
-        }
+        return BoardData(
+            board_name=board_name,
+            bid=int(bid),
+        )
 
     group_parser = {
         "msg_quote": {
