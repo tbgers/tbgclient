@@ -343,9 +343,13 @@ def login(session: Session, username: str, password: str,
         Don't rely on ``session`` storing them, as cookies stored
         on ``requests.Session`` are global.
     """
+    # make sure SMF takes note of the user agent
+    # you don't have to do this in SMF 2.1.6
+    visit_res = request(session, "GET", FORUM_URL)
 
     # get form first to get nonce
-    form_res = do_action(session, "login", allow_redirects=False)
+    form_res = do_action(session, "login", allow_redirects=False,
+                         cookies=visit_res.cookies)
     if form_res.status_code == 302:  # we're already logged in
         return form_res
     else:
