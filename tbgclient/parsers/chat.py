@@ -2,8 +2,7 @@
 Parsing utilities for the TBGs chat.
 """
 
-from tbgclient.data.forum import UserData
-from tbgclient.data.chat import ResponseData, MessageData
+from tbgclient.data.chat import UserData, ResponseData, MessageData
 from bs4 import BeautifulSoup
 from email.utils import parsedate_to_datetime as parse_date
 
@@ -27,7 +26,7 @@ def parse_response(response: str) -> ResponseData:
         for user in elm.children:
             users.append(UserData(
                 uid=int(user["userID"]),
-                group=user["userRole"],
+                role=user["userRole"],
                 name=user.contents[0],
             ))
 
@@ -41,7 +40,7 @@ def parse_response(response: str) -> ResponseData:
                 date=parse_date(message["dateTime"]),
                 user=UserData(
                     uid=int(message["userID"]),
-                    group=message["userRole"],
+                    role=message["userRole"],
                     name=username.contents[0],
                 ),
                 cid=int(message["channelID"]),

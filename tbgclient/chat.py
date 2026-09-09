@@ -2,20 +2,33 @@
 Classes for use with the TBGs Chat.
 """
 
-from collections import namedtuple
-from .forum import User
+from dataclasses import dataclass
 from .parsers.chat import parse_response
-from .protocols.forum import UserData
-from datetime import datetime
-from typing import Self, TYPE_CHECKING, Generator
+from .data.chat import MessageData, UserData
+from typing import TYPE_CHECKING, Generator
+try:
+    # PORT: 3.10 and below doesn't have typing.Self
+    from typing import Self
+except ImportError:
+    from typing_extensions import Self
 from requests import Response
 if TYPE_CHECKING:
     import tbgclient
 
 
-class Message(namedtuple("_Message", [
-    "mid", "user", "cid", "content", "date"
-])):
+@dataclass
+class User(UserData):
+    def __getattr__(self: Self, attr: str) -> None:
+        error = AttributeError(f"{self.__name__!r} has no attribute {attr!r}")
+        error.add_note(
+            "Starting in tbgclient v0.7, this User class is no longer"
+            " associated with the User class in tbgclient.forum."
+        )
+        raise error
+
+
+@dataclass
+class Message(MessageData):
     """A class representing a chat message.
 
     .. note::
@@ -23,21 +36,8 @@ class Message(namedtuple("_Message", [
         :py:class:`tbgclient.forum.Message`.
     """
 
-    mid: int
-    """The message ID."""
     user: User
     """The poster of this message."""
-    cid: int
-    """The channel ID of this message."""
-    content: str
-    """The message content."""
-    date: str | datetime
-    """The date this message is posted."""
-
-    def __new__(cls: "Message", *,
-                mid: int, user: UserData, cid: int,
-                content: str, date: datetime) -> None:
-        return super().__new__(cls, mid, User(**user), cid, content, date)
 
     @property
     def author(self: Self) -> None:
@@ -78,7 +78,8 @@ class ChatConnection:
         """Poll the server to retrieve the recent messages.
 
         :return: The information of this connection.
-        :rtype: dict[str, str]"""
+        :rtype: dict[str, str]
+        """
         res = self.session.request(
             "GET", "https://tbgforums.com/forums/chat/",
             params={
@@ -99,7 +100,7 @@ class ChatConnection:
             if self.last_mid is None or self.last_mid < msg["mid"]:
                 self.last_mid = msg["mid"]
             self.__buffer[msg["mid"]] = Message(**msg)
-        self.users = [User(data) for data in res["users"]]
+        self.users = res["users"]
         self.cid = res["infos"].get("channelID", self.cid)
 
         return res["infos"]

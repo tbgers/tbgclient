@@ -1,23 +1,64 @@
 """
 Data classes that signifies parts of the TBGs chat.
+
+.. note::
+
+    Some of these classes look and are named similar to the classes at
+    :py:mod:`~tbgclient.data.forum`. However, they are not related to each
+    other (aside from the data classes which inherits
+    :py:mod:`tbgclient.data.utils.Data`) and are not interchangeable with one
+    another.
 """
 
 from dataclasses import dataclass
-from .forum import UserData
 from datetime import datetime
+from enum import Enum
+from typing import Any
+try:
+    # PORT: 3.10 and below doesn't have typing.Self
+    from typing import Self
+except ImportError:
+    from typing_extensions import Self
+import re
 
 from .utils import Data
 
 
+class UserRole(Enum):
+    """An enum of user roles used in the TBGs chat."""
+    # names taken from ajaxChat.getRoleClass
+    GUEST = "0"
+    USER = "1"
+    MODERATOR = "2"
+    ADMIN = "3"
+    CHAT_BOT = "4"
+    CUSTOM_USER = "5"
+    DEFAULT = None
+
+    @classmethod
+    def _missing_(cls: "UserRole", value: Any) -> "UserRole":
+        return cls.DEFAULT
+
+    def class_name(self: Self) -> str:
+        """Return class names as returned by ``ajaxChat.getRoleClass``."""
+        return re.sub("_(.)", lambda match: match[1].upper, self.name.lower)
+
+
+@dataclass(kw_only=True)
+class UserData(Data):
+    """A type that contains information about a user."""
+
+    uid: int
+    """The user's ID."""
+    name: str
+    """The user's name."""
+    role: UserRole
+    """The user's role."""
+
+
 @dataclass(kw_only=True)
 class MessageData(Data):
-    """A type that contains information about a message.
-
-    .. note::
-
-        This should not be confused with
-        :py:class:`tbgclient.protocols.forum.MessageData`.
-    """
+    """A type that contains information about a message."""
 
     mid: int
     """The message ID."""
