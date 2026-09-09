@@ -66,6 +66,19 @@ class Page(PageData, Generic[T]):
         return iter(self.contents)
 
 
+"""
+For those wondering, the update and submit aliases are a leftover of Indexed,
+an ABC representing "anything that has an index" which defines the two
+aforementioned abstract methods. I removed it because the class doesn't make
+sense; some classes like Topic (which has an index) will decidedly not have a
+"submit" method. For now, the methods are aliased to the corresponding
+update_ and submit_ prefixed methods as selected by _Indexed here.
+
+Currently I'm not sure whether to keep the update and submit methods, as well
+as the update_ and submit_ prefix.
+"""
+
+
 @dataclass
 class User(UsesSession, UserData):
     """A class that represents a user."""
@@ -149,6 +162,9 @@ class User(UsesSession, UserData):
         forum_parser.check_errors(res.text, res)
         return self
 
+    update = update_get
+    submit = submit_profile
+
 
 @dataclass
 class Topic(Paged, UsesSession, TopicData):
@@ -168,6 +184,8 @@ class Topic(Paged, UsesSession, TopicData):
         last_item = page.hierarchy[-1]
         last_name, _last_url = last_item
         return replace(self, topic_name=last_name, pages=page.total_pages)
+
+    update = update_get
 
     def get_page(self: Self, page: int = 1) -> Page["Message"]:
         """Gets a page of posts."""
@@ -254,6 +272,9 @@ class Message(UsesSession, MessageData):
             forum_parser.check_errors(res.text, res)
         post = forum_parser.parse_quotefast(res.text)
         return replace(self, **post)
+
+    submit = submit_post
+    update = update_get
 
 
 @dataclass(frozen=True)
