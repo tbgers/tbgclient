@@ -377,10 +377,9 @@ def parse_alerts_content(
         topic_data = parse_topic_link(link)
         # The text of the link is parsed as topic_name
         # In messages, these are for subjects
-        topic_data["subject"] = topic_data["topic_name"]
-        del topic_data["topic_name"]
+        topic_data["topic_name"] = None
+        subject = topic_data["topic_name"]
         msg_link = urlparse(link.get("href"))
-        subject = link.get("title")
         mid = int(msg_link.fragment[3:])
         return MessageData(
             subject=subject,
