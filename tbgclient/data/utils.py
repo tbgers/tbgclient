@@ -113,7 +113,8 @@ class Data(Mapping):
 
     def __iter__(self: Self) -> Iterator[str]:
         _check_field_names(self)
-        return iter(self.__field_names__)
+        return (field for field in self.__field_names__
+                if self[field] is not None)
 
     def __len__(self: Self) -> int:
         _check_field_names(self)
