@@ -89,6 +89,7 @@ class TopicData(BoardData):
 class UserGroup(Enum):
     """An enum of user groups used in the TBGs."""
     BANNED = "Banned"
+    NEW_TBG = "New TBGer"
     TBG = "TBGer"
     TBG_TEAM = "TBG Team"
     # TBG_ADMIN = "TBG Administrator"  # this is not a thing anymore
